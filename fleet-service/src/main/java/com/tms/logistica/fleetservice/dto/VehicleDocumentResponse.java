@@ -1,0 +1,24 @@
+package com.tms.logistica.fleetservice.dto;
+
+import com.tms.logistica.fleetservice.model.VehicleDocumentType;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDate;
+
+@Data
+@Builder
+public class VehicleDocumentResponse {
+
+    private Long id;
+
+    private String documentNumber;
+
+    private VehicleDocumentType documentType;
+
+    private LocalDate issueDate;
+
+    private LocalDate expirationDate;
+
+    private Long vehicleId;
+}

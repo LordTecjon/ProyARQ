@@ -18,6 +18,8 @@ public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository repository;
 
+
+
     @Override
     public VehicleResponse createVehicle(VehicleRequest request) {
 
@@ -74,6 +76,20 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setModel(request.getModel());
         vehicle.setYear(request.getYear());
         vehicle.setVehicleType(request.getVehicleType());
+
+        Vehicle updated = repository.save(vehicle);
+
+        return mapToResponse(updated);
+    }
+
+    @Override
+    public VehicleResponse updateStatus(Long id, VehicleStatus status) {
+
+        Vehicle vehicle = repository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Vehículo no encontrado"));
+
+        vehicle.setStatus(status);
 
         Vehicle updated = repository.save(vehicle);
 

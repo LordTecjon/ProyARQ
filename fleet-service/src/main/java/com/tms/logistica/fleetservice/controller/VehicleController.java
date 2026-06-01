@@ -1,5 +1,6 @@
 package com.tms.logistica.fleetservice.controller;
 
+import com.tms.logistica.fleetservice.model.VehicleStatus;
 import com.tms.logistica.fleetservice.dto.VehicleRequest;
 import com.tms.logistica.fleetservice.dto.VehicleResponse;
 import com.tms.logistica.fleetservice.service.VehicleService;
@@ -42,5 +43,13 @@ public class VehicleController {
             @Valid @RequestBody VehicleRequest request) {
 
         return service.updateVehicle(id, request);
+    }
+
+    @PatchMapping("/{id}/status")
+    public VehicleResponse updateStatus(
+            @PathVariable Long id,
+            @RequestParam VehicleStatus status) {
+
+        return service.updateStatus(id, status);
     }
 }

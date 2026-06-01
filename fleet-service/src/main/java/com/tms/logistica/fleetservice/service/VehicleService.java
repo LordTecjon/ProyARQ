@@ -1,5 +1,6 @@
 package com.tms.logistica.fleetservice.service;
 
+import com.tms.logistica.fleetservice.model.VehicleStatus;
 import com.tms.logistica.fleetservice.dto.VehicleRequest;
 import com.tms.logistica.fleetservice.dto.VehicleResponse;
 
@@ -14,5 +15,7 @@ public interface VehicleService {
     List<VehicleResponse> getAllVehicles();
 
     VehicleResponse updateVehicle(Long id, VehicleRequest request);
+
+    VehicleResponse updateStatus(Long id, VehicleStatus status);
 }
 

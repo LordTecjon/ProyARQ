@@ -83,7 +83,6 @@ public class VehicleServiceImpl implements VehicleService {
     private VehicleResponse mapToResponse(Vehicle vehicle) {
 
         return VehicleResponse.builder()
-        return VehicleResponse.builder()
                 .id(vehicle.getId())
                 .plate(vehicle.getPlate())
                 .chassisNumber(vehicle.getChassisNumber())

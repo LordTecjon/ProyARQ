@@ -15,3 +15,4 @@ public interface VehicleService {
 
     VehicleResponse updateVehicle(Long id, VehicleRequest request);
 }
+

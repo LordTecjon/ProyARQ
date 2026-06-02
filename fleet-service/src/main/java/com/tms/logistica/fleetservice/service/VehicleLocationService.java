@@ -7,4 +7,6 @@ public interface VehicleLocationService {
 
     VehicleLocationResponse registerLocation(
             VehicleLocationRequest request);
+    VehicleLocationResponse getLocationByVehicleId(
+            Long vehicleId);
 }

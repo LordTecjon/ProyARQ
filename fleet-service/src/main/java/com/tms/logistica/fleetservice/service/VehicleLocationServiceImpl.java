@@ -59,4 +59,22 @@ public class VehicleLocationServiceImpl
                 .vehicleId(saved.getVehicle().getId())
                 .build();
     }
+
+    @Override
+    public VehicleLocationResponse getLocationByVehicleId(
+            Long vehicleId) {
+
+        VehicleLocation location = locationRepository
+                .findByVehicleId(vehicleId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Ubicación no encontrada"));
+
+        return VehicleLocationResponse.builder()
+                .id(location.getId())
+                .latitude(location.getLocation().getY())
+                .longitude(location.getLocation().getX())
+                .vehicleId(location.getVehicle().getId())
+                .build();
+    }
 }

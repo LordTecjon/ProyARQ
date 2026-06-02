@@ -19,4 +19,11 @@ public class VehicleLocationController {
 
         return service.registerLocation(request);
     }
+
+    @GetMapping("/vehicle/{vehicleId}")
+    public VehicleLocationResponse getLocationByVehicleId(
+            @PathVariable Long vehicleId) {
+
+        return service.getLocationByVehicleId(vehicleId);
+    }
 }

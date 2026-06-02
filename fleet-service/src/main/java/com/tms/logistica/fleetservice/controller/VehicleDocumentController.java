@@ -1,5 +1,6 @@
 package com.tms.logistica.fleetservice.controller;
 
+import java.util.List;
 import com.tms.logistica.fleetservice.dto.VehicleDocumentRequest;
 import com.tms.logistica.fleetservice.dto.VehicleDocumentResponse;
 import com.tms.logistica.fleetservice.service.VehicleDocumentService;
@@ -18,6 +19,11 @@ public class VehicleDocumentController {
             @RequestBody VehicleDocumentRequest request) {
 
         return service.createDocument(request);
+    }
+    @GetMapping
+    public List<VehicleDocumentResponse> getAllDocuments() {
+
+        return service.getAllDocuments();
     }
 }
 

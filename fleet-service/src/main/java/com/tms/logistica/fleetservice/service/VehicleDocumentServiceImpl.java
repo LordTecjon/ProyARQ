@@ -1,5 +1,6 @@
 package com.tms.logistica.fleetservice.service;
 
+import java.util.List;
 import com.tms.logistica.fleetservice.dto.VehicleDocumentRequest;
 import com.tms.logistica.fleetservice.dto.VehicleDocumentResponse;
 import com.tms.logistica.fleetservice.exception.ResourceNotFoundException;
@@ -47,5 +48,22 @@ public class VehicleDocumentServiceImpl
                 .expirationDate(saved.getExpirationDate())
                 .vehicleId(saved.getVehicle().getId())
                 .build();
+    }
+    @Override
+    public List<VehicleDocumentResponse> getAllDocuments() {
+
+        return documentRepository
+                .findAllByOrderByExpirationDateAsc()
+                .stream()
+                .map(document ->
+                        VehicleDocumentResponse.builder()
+                                .id(document.getId())
+                                .documentNumber(document.getDocumentNumber())
+                                .documentType(document.getDocumentType())
+                                .issueDate(document.getIssueDate())
+                                .expirationDate(document.getExpirationDate())
+                                .vehicleId(document.getVehicle().getId())
+                                .build())
+                .toList();
     }
 }

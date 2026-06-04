@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -32,6 +33,7 @@ import java.nio.charset.StandardCharsets;
  * Se configura en apisperu.facturacion.token en application.properties.
  */
 @Slf4j
+@Component
 public class SunatGateway {
     /**
      * Resultado del envio al ose. contiene el codigo cdr de sunat,
@@ -44,7 +46,7 @@ public class SunatGateway {
     ) {}
     /**
      * URL base del servicio de facturacion.
-     * Valor esperado: https://facturacion.apisperu.com/api/v1
+     * Valor esperado: "https://facturacion.apisperu.com/api/v1"
      */
     @Value("${apisperu.facturacion.url}")
     private String baseUrl;

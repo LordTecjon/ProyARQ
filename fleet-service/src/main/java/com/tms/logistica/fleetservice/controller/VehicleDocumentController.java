@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/documents")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class VehicleDocumentController {
 
@@ -20,10 +21,11 @@ public class VehicleDocumentController {
 
         return service.createDocument(request);
     }
+
     @GetMapping
     public List<VehicleDocumentResponse> getAllDocuments() {
-
         return service.getAllDocuments();
     }
-}
 
+
+}

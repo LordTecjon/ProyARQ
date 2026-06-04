@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tms_customer_db
+    environment:
+      POSTGRES_DB: tms_customer_db
+      POSTGRES_USER: tms_user
+      POSTGRES_PASSWORD: tms_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_customer:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tms_user -d tms_customer_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata_customer:

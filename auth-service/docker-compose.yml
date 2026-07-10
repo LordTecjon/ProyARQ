@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tms_auth_db
+    environment:
+      POSTGRES_DB: tms_auth_db
+      POSTGRES_USER: tms_user
+      POSTGRES_PASSWORD: tms_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_auth:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tms_user -d tms_auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: tms_auth_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata_auth:

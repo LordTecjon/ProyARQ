@@ -12,11 +12,15 @@ import com.tms.logistica.customerservice.exception.CustomerNotFoundException;
 import com.tms.logistica.customerservice.exception.DuplicateRucException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,6 +42,7 @@ public class CustomerServiceImpl implements CustomerService {
     // -------------------------------------------------------------------------
     @Override
     @Transactional
+    @CacheEvict(value = "customers", allEntries = true)
     public CustomerDetailResponse createCustomer(CreateCustomerRequest req) {
         if (customerRepo.existsByRuc(req.getRuc())) {
             throw new DuplicateRucException(req.getRuc());
@@ -77,6 +82,7 @@ public class CustomerServiceImpl implements CustomerService {
     // -------------------------------------------------------------------------
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "customers", key = "#id")
     public CustomerDetailResponse getCustomer(UUID id) {
         Customer c = findOrThrow(id);
         return toDetail(c);
@@ -87,6 +93,7 @@ public class CustomerServiceImpl implements CustomerService {
     // -------------------------------------------------------------------------
     @Override
     @Transactional
+    @CacheEvict(value = "customers", key = "#id")
     public CustomerDetailResponse updateCustomer(UUID id, UpdateCustomerRequest req) {
         Customer c = findOrThrow(id);
 
@@ -109,6 +116,7 @@ public class CustomerServiceImpl implements CustomerService {
     // -------------------------------------------------------------------------
     @Override
     @Transactional
+    @CacheEvict(value = "customers", key = "#id")
     public CustomerDetailResponse deactivateCustomer(UUID id, DeactivateCustomerRequest req) {
         Customer c = findOrThrow(id);
 

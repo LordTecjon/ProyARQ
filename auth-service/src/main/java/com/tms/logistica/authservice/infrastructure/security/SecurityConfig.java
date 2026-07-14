@@ -33,7 +33,7 @@ public class SecurityConfig {
                     "/api/v1/auth/refresh",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/actuator/health"
+                    "/actuator/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole("ADMINISTRADOR")
                 .requestMatchers("/api/v1/roles/**").hasRole("ADMINISTRADOR")

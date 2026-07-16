@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>billing-service · Demo</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --line:#334155; --txt:#e2e8f0; --muted:#94a3b8;
+          --accent:#38bdf8; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--txt); }
+  header { padding:20px 28px; border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:20px; } header p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+  .wrap { display:grid; grid-template-columns:1fr 1fr; gap:18px; padding:22px; max-width:1200px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .card h2 { margin:0 0 14px; font-size:15px; color:var(--accent); }
+  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+  input, select { width:100%; padding:8px 10px; background:#0b1220; border:1px solid var(--line);
+                  border-radius:8px; color:var(--txt); font-size:14px; }
+  .row { display:flex; gap:8px; align-items:flex-end; }
+  .row > div { flex:1; }
+  button { cursor:pointer; border:none; border-radius:8px; padding:9px 14px; font-weight:600; font-size:13px; }
+  .primary { background:var(--accent); color:#012; } .ghost { background:#0b1220; color:var(--txt); border:1px solid var(--line); }
+  .danger { background:var(--err); color:#fff; } .amber { background:var(--warn); color:#231; }
+  .lineitem { border:1px dashed var(--line); border-radius:8px; padding:10px; margin-bottom:8px; }
+  .preview { margin-top:14px; padding:12px; border-radius:8px; background:#0b1220; border:1px solid var(--line); }
+  .preview .big { font-size:22px; font-weight:700; }
+  .kv { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; }
+  .kv span:first-child { color:var(--muted); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+  .b-ACEPTADO { background:rgba(34,197,94,.15); color:var(--ok); }
+  .b-ANULADO { background:rgba(239,68,68,.15); color:var(--err); }
+  pre { background:#0b1220; border:1px solid var(--line); border-radius:8px; padding:12px;
+        font-size:12px; overflow:auto; max-height:260px; color:#cbd5e1; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  .muted { color:var(--muted); font-size:12px; }
+  .full { grid-column:1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>billing-service · Demostración interactiva</h1>
+  <p>Módulo 7 — Integración Financiera y Facturación. Ingresa tus valores; el backend calcula el IGV, genera serie/correlativo, "envía" a SUNAT (simulado) y persiste el comprobante.</p>
+</header>
+
+<div class="wrap">
+  <!-- EMISIÓN -->
+  <div class="card">
+    <h2>1 · Emitir comprobante (RF7.1–7.3)</h2>
+    <div class="row">
+      <div>
+        <label>Tipo</label>
+        <select id="tipo">
+          <option value="FACTURA">FACTURA</option>
+          <option value="BOLETA">BOLETA</option>
+        </select>
+      </div>
+      <div>
+        <label>Moneda</label>
+        <select id="moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Cliente ID</label><input id="clienteId" type="number" value="1"></div>
+      <div><label>Cliente nombre</label><input id="clienteNombre" value="Transportes ACME S.A.C."></div>
+    </div>
+    <label>Fecha de vencimiento</label>
+    <input id="fechaVencimiento" type="date">
+
+    <label style="margin-top:16px">Líneas de detalle</label>
+    <div id="lineas"></div>
+    <button class="ghost" onclick="addLinea()">+ Agregar línea</button>
+
+    <div class="preview">
+      <div class="muted">Cálculo estimado en el navegador (IGV 18%)</div>
+      <div class="kv"><span>Subtotal</span><span id="pv-sub">0.00</span></div>
+      <div class="kv"><span>IGV (18%)</span><span id="pv-igv">0.00</span></div>
+      <div class="kv"><span>Total</span><span class="big" id="pv-tot">0.00</span></div>
+    </div>
+    <button class="primary" style="margin-top:12px;width:100%" onclick="emitir()">Emitir contra el servicio →</button>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="card">
+    <h2>2 · Respuesta del servidor (autoritativa)</h2>
+    <div id="resultado" class="muted">Aún no has emitido nada. Llena el formulario y presiona «Emitir».</div>
+
+    <div id="acciones" style="display:none;margin-top:16px">
+      <h2 style="margin-top:8px">3 · Operar sobre el comprobante</h2>
+      <div class="row">
+        <div><label>Monto de pago</label><input id="pagoMonto" type="number" step="0.01"></div>
+        <div>
+          <label>Medio</label>
+          <select id="pagoMedio">
+            <option>TRANSFERENCIA</option><option>DEPOSITO</option><option>CHEQUE</option><option>EFECTIVO</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" onclick="registrarPago()">Registrar pago (RF7.4)</button>
+        <button class="amber" onclick="notaCredito()">Nota de crédito (RF7.7)</button>
+        <button class="danger" onclick="anular()">Anular (RF7.8)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUENTAS POR COBRAR -->
+  <div class="card full">
+    <h2>4 · Cuentas por cobrar (RF7.5) &nbsp;·&nbsp; Histórico por cliente (RF7.9)</h2>
+    <div class="row" style="max-width:520px">
+      <button class="ghost" onclick="verCxC()">Ver todas las CxC</button>
+      <div><label>Histórico de cliente ID</label><input id="histCliente" type="number" value="1"></div>
+      <button class="ghost" onclick="verHistorico()">Ver histórico</button>
+    </div>
+    <div id="tabla" style="margin-top:12px"></div>
+  </div>
+
+  <!-- JSON crudo -->
+  <div class="card full">
+    <h2>Respuesta JSON cruda (última llamada)</h2>
+    <pre id="raw">—</pre>
+  </div>
+</div>
+
+<script>
+const API = "/api/billing";
+let ultimoId = null;
+
+function today(offset=0){ const d=new Date(); d.setDate(d.getDate()+offset); return d.toISOString().slice(0,10); }
+document.getElementById("fechaVencimiento").value = today(30);
+
+function lineaTpl(){
+  return `<div class="lineitem">
+    <input placeholder="Descripción del servicio" class="ld" value="Flete Lima - Arequipa">
+    <div class="row" style="margin-top:6px">
+      <div><label>Cantidad</label><input class="lc" type="number" step="0.001" value="1" oninput="preview()"></div>
+      <div><label>Precio unitario (sin IGV)</label><input class="lp" type="number" step="0.01" value="1000" oninput="preview()"></div>
+      <button class="ghost" onclick="this.closest('.lineitem').remove();preview()">✕</button>
+    </div></div>`;
+}
+function addLinea(){ document.getElementById("lineas").insertAdjacentHTML("beforeend", lineaTpl()); preview(); }
+addLinea();
+
+function leerLineas(){
+  return [...document.querySelectorAll(".lineitem")].map(el => ({
+    descripcion: el.querySelector(".ld").value,
+    cantidad: parseFloat(el.querySelector(".lc").value)||0,
+    precioUnitario: parseFloat(el.querySelector(".lp").value)||0
+  }));
+}
+function preview(){
+  const sub = leerLineas().reduce((s,l)=> s + l.cantidad*l.precioUnitario, 0);
+  const igv = sub*0.18, tot = sub+igv;
+  pv_sub.textContent = sub.toFixed(2); pv_igv.textContent = igv.toFixed(2); pv_tot.textContent = tot.toFixed(2);
+}
+
+async function call(method, path, body){
+  const opt = { method, headers:{ "Content-Type":"application/json", "X-Usuario":"david" } };
+  if (body) opt.body = JSON.stringify(body);
+  const res = await fetch(API+path, opt);
+  const json = await res.json();
+  document.getElementById("raw").textContent = JSON.stringify(json, null, 2);
+  return { ok: res.ok, json };
+}
+
+function money(n){ return Number(n).toLocaleString("es-PE",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function pintarComprobante(c){
+  ultimoId = c.id;
+  document.getElementById("acciones").style.display = "block";
+  document.getElementById("pagoMonto").value = c.saldoPendiente;
+  document.getElementById("resultado").innerHTML = `
+    <div style="font-size:20px;font-weight:700">${c.serie}-${c.correlativo}
+      <span class="badge b-${c.estado}">${c.estado}</span></div>
+    <div class="muted" style="margin-bottom:8px">${c.tipo} · ${c.moneda} · cliente ${c.clienteNombre}</div>
+    <div class="kv"><span>Subtotal</span><span>${money(c.subtotal)}</span></div>
+    <div class="kv"><span>IGV</span><span>${money(c.igv)}</span></div>
+    <div class="kv"><span>Total</span><span style="font-weight:700">${money(c.total)}</span></div>
+    <div class="kv"><span>Pagado</span><span>${money(c.montoPagado)}</span></div>
+    <div class="kv"><span>Saldo pendiente</span><span>${money(c.saldoPendiente)}</span></div>
+    <div class="kv"><span>CDR SUNAT (simulado)</span><span>${c.cdrRespuesta||"—"}</span></div>`;
+}
+
+async function emitir(){
+  const body = {
+    tipo: tipo.value, clienteId: parseInt(clienteId.value), clienteNombre: clienteNombre.value,
+    moneda: moneda.value, tipoCambio: moneda.value==="USD"?3.75:null,
+    fechaVencimiento: fechaVencimiento.value || null, lineas: leerLineas()
+  };
+  const { ok, json } = await call("POST","/invoices", body);
+  if (ok) pintarComprobante(json.data);
+  else document.getElementById("resultado").innerHTML = `<span style="color:var(--err)">${json.error||"Error"}</span>`;
+}
+
+async function registrarPago(){
+  if(!ultimoId) return;
+  const body = { monto: parseFloat(pagoMonto.value), medioPago: pagoMedio.value, fechaPago: today() };
+  const { ok, json } = await call("POST", `/invoices/${ultimoId}/payments`, body);
+  if (ok) pintarComprobante(json.data);
+  else alert(json.error);
+}
+async function anular(){
+  if(!ultimoId) return;
+  const { ok, json } = await call("PATCH", `/invoices/${ultimoId}/void`, { motivo:"Anulado desde la demo" });
+  if (ok) pintarComprobante(json.data); else alert(json.error);
+}
+async function notaCredito(){
+  if(!ultimoId) return;
+  const { ok, json } = await call("POST", `/invoices/${ultimoId}/credit-notes`, { motivo:"Devolución de servicio" });
+  if (ok){ pintarComprobante(json.data); alert("Nota de crédito emitida: "+json.data.serie+"-"+json.data.correlativo); }
+  else alert(json.error);
+}
+
+async function verCxC(){
+  const { json } = await call("GET","/receivables");
+  const rows = (json.data||[]).map(c=>`<tr>
+    <td>${c.serie}-${c.correlativo}</td><td>${c.clienteNombre}</td>
+    <td>${money(c.total)}</td><td>${money(c.saldoPendiente)}</td>
+    <td>${c.vencido?`<span style="color:var(--err)">vencido ${c.diasVencido}d</span>`:"vigente"}</td></tr>`).join("");
+  document.getElementById("tabla").innerHTML = rows
+    ? `<table><tr><th>Comprobante</th><th>Cliente</th><th>Total</th><th>Saldo</th><th>Estado</th></tr>${rows}</table>`
+    : `<div class="muted">No hay cuentas por cobrar pendientes.</div>`;
+}
+async function verHistorico(){
+  const { json } = await call("GET",`/invoices/history?clienteId=${histCliente.value}`);
+  const d = json.data;
+  document.getElementById("tabla").innerHTML = d ? `
+    <div class="kv"><span>Comprobantes del cliente ${d.clienteId}</span><span>${d.totalComprobantes}</span></div>
+    <div class="kv"><span>Total facturado</span><span>${money(d.totalFacturado)}</span></div>
+    <div class="kv"><span>Total IGV</span><span>${money(d.totalIgv)}</span></div>
+    <div class="kv"><span>Total pagado</span><span>${money(d.totalPagado)}</span></div>
+    <div class="kv"><span>Saldo pendiente</span><span>${money(d.saldoPendiente)}</span></div>` : "";
+}
+preview();
+</script>
+</body>
+</html>

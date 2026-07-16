@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo Order + Cost Service</title>
+  <style>
+    :root { font-family: Arial, sans-serif; color: #18202a; background: #f4f6f8; }
+    body { margin: 0; }
+    header { background: #10233f; color: white; padding: 18px 28px; }
+    h1 { margin: 0; font-size: 22px; }
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px; }
+    section { background: white; border: 1px solid #d8dee6; border-radius: 8px; padding: 16px; }
+    h2 { margin: 0 0 12px; font-size: 17px; color: #10233f; }
+    label { display: block; font-size: 12px; font-weight: 700; margin: 10px 0 4px; color: #465568; }
+    input, select { width: 100%; box-sizing: border-box; padding: 9px; border: 1px solid #c8d0da; border-radius: 6px; font-size: 14px; }
+    button { margin-top: 12px; padding: 10px 12px; border: 0; border-radius: 6px; background: #1463ff; color: white; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #44546a; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .banner { margin: 18px 18px 0; background: #fff7d6; border: 1px solid #e9ca6a; border-radius: 8px; padding: 12px; }
+    .full { grid-column: 1 / -1; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+    .card { border: 1px solid #d8dee6; border-radius: 8px; padding: 12px; background: #f9fbfd; }
+    .card span { display:block; font-size: 12px; color:#65758a; font-weight:700; }
+    .card strong { display:block; margin-top: 6px; font-size: 18px; color:#10233f; }
+    details { margin-top: 14px; border: 1px solid #d8dee6; border-radius: 8px; padding: 10px; background:#fbfcfe; }
+    summary { cursor: pointer; font-weight: 700; color:#10233f; }
+    pre { background: #101820; color: #d8f3dc; padding: 12px; border-radius: 6px; overflow: auto; max-height: 220px; font-size: 12px; white-space: pre-wrap; }
+    .muted { color:#65758a; font-size:13px; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header><h1>Demo TMS: Orden de transporte + costo automatico</h1></header>
+  <div class="banner">Los datos ya vienen precargados para exponer rapido, pero puedes editarlos. Al crear la orden, el frontend llama a <b>order-service</b>, calcula el costo estimado y lo registra en <b>cost-service</b>.</div>
+
+  <main>
+    <section>
+      <h2>1. Datos de la orden</h2>
+      <div class="row"><div><label>Cliente ID</label><input id="clienteId" type="number" value="1"></div><div><label>Cliente</label><input id="clienteNombre" value="Transportes Demo SAC"></div></div>
+      <div class="row"><div><label>Tipo de servicio</label><select id="tipoServicio"><option>LOCAL</option><option>NACIONAL</option><option selected>EXPRESS</option><option>REFRIGERADO</option></select></div><div><label>Fecha recojo</label><input id="fechaRecojo" type="date"></div></div>
+      <label>Origen</label><input id="origenDireccion" value="Av. Javier Prado 123, Lima">
+      <div class="row"><div><label>Ubigeo origen</label><input id="origenUbigeo" value="150101"></div><div><label>Distancia KM</label><input id="distanciaKm" type="number" value="42.5" step="0.1"></div></div>
+      <label>Destino</label><input id="destinoDireccion" value="Av. La Marina 456, Callao">
+      <label>Ubigeo destino</label><input id="destinoUbigeo" value="070101">
+      <div class="row"><div><label>Vehiculo ID</label><input id="vehiculoId" type="number" value="1"></div><div><label>Conductor ID</label><input id="conductorId" type="number" value="1"></div></div>
+      <label>Detalle de carga</label><input id="descripcion" value="Cajas de mercaderia">
+      <div class="row"><div><label>Cantidad</label><input id="cantidad" type="number" value="10"></div><div><label>Peso kg</label><input id="pesoKg" type="number" value="180" step="0.1"></div></div>
+      <button onclick="crearOrden()">Crear orden y calcular costo</button>
+      <button class="secondary" onclick="listarOrdenes()">Listar ordenes</button>
+    </section>
+
+    <section>
+      <h2>2. Costo asociado</h2>
+      <div class="row"><div><label>Orden ID</label><input id="ordenId" type="number" placeholder="Automatico"></div><div><label>Codigo OT</label><input id="codigoOrden" placeholder="Automatico"></div></div>
+      <div class="row"><div><label>Costo estimado automatico</label><input id="costoEstimado" type="number" step="0.01"></div><div><label>Ingreso para margen</label><input id="ingreso" type="number" value="1500" step="0.01"></div></div>
+      <p class="muted">Formula usada: tarifa base 150 + distancia * 4 + peso * 0.8 + recargo por tipo de servicio.</p>
+      <button onclick="registrarIngreso()">Registrar ingreso y margen</button>
+      <button class="secondary" onclick="consultarResumen()">Consultar resumen</button>
+    </section>
+
+    <section class="full">
+      <h2>Resultado visible para la demo</h2>
+      <div id="status" class="muted">Listo para iniciar.</div>
+      <div class="cards">
+        <div class="card"><span>Orden</span><strong id="cardOrden">-</strong></div>
+        <div class="card"><span>Estado</span><strong id="cardEstado">-</strong></div>
+        <div class="card"><span>Costo estimado</span><strong id="cardCosto">-</strong></div>
+        <div class="card"><span>Margen</span><strong id="cardMargen">-</strong></div>
+      </div>
+      <details>
+        <summary>Ver request enviado al endpoint</summary>
+        <pre id="requestBox">Todavia no se envio ningun request.</pre>
+      </details>
+    </section>
+  </main>
+
+<script>
+const statusBox = document.getElementById('status');
+const requestBox = document.getElementById('requestBox');
+document.getElementById('fechaRecojo').value = new Date().toISOString().slice(0, 10);
+function n(id) { return Number(document.getElementById(id).value); }
+function v(id) { return document.getElementById(id).value; }
+function money(value) { return value == null ? '-' : `S/ ${Number(value).toFixed(2)}`; }
+function setRequest(method, url, payload) { requestBox.textContent = `${method} ${url}\n\n${payload ? JSON.stringify(payload, null, 2) : '(sin body)'}`; }
+function updateCards({ orden, costo, resumen, margen }) {
+  if (orden) { document.getElementById('cardOrden').textContent = orden.codigoOrden || orden.id || '-'; document.getElementById('cardEstado').textContent = orden.estado || '-'; }
+  if (costo) document.getElementById('cardCosto').textContent = money(costo.total || costo.costoEstimado);
+  if (resumen) document.getElementById('cardCosto').textContent = money(resumen.costoEstimado);
+  if (margen) document.getElementById('cardMargen').textContent = money(margen.margen);
+}
+async function api(url, options = {}) {
+  const res = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', 'X-Usuario': 'demo-profesor', ...(options.headers || {}) } });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw body;
+  return body;
+}
+function calcularCostoEstimado(orden) {
+  const distancia = Number(orden.distanciaKm || 0), peso = Number(orden.pesoTotalKg || 0);
+  const recargoServicio = ({ LOCAL: 0, NACIONAL: 120, EXPRESS: 200, REFRIGERADO: 300 })[orden.tipoServicio] || 0;
+  const total = 150 + distancia * 4 + peso * 0.8 + recargoServicio;
+  return { total: Number(total.toFixed(2)), formula: `150 + (${distancia} * 4) + (${peso} * 0.8) + ${recargoServicio}` };
+}
+async function crearOrden() {
+  try {
+    const payload = { clienteId:n('clienteId'), clienteNombre:v('clienteNombre'), tipoServicio:v('tipoServicio'), origenDireccion:v('origenDireccion'), origenUbigeo:v('origenUbigeo'), destinoDireccion:v('destinoDireccion'), destinoUbigeo:v('destinoUbigeo'), fechaRecojo:v('fechaRecojo'), distanciaKm:n('distanciaKm'), vehiculoId:n('vehiculoId'), conductorId:n('conductorId'), observaciones:'Orden creada desde frontend-demo', detalles:[{ descripcion:v('descripcion'), cantidad:n('cantidad'), pesoKg:n('pesoKg'), volumenM3:1.5 }] };
+    setRequest('POST', '/api/orders', payload);
+    const orderResult = await api('/order-api/api/orders', { method:'POST', body:JSON.stringify(payload) });
+    const orden = orderResult.data;
+    document.getElementById('ordenId').value = orden.id;
+    document.getElementById('codigoOrden').value = orden.codigoOrden;
+    const calculo = calcularCostoEstimado(orden);
+    document.getElementById('costoEstimado').value = calculo.total;
+    const costoPayload = { monto: calculo.total, observaciones: `Costo estimado automatico. Formula: ${calculo.formula}` };
+    setRequest('POST', `/api/trip-costs/${orden.id}/estimated`, costoPayload);
+    await api(`/cost-api/api/trip-costs/${orden.id}/estimated`, { method:'POST', body:JSON.stringify(costoPayload) });
+    const resumenResult = await api(`/cost-api/api/trip-costs/${orden.id}/summary`);
+    statusBox.textContent = 'Orden creada y costo estimado registrado en cost-service.';
+    updateCards({ orden, costo: calculo, resumen: resumenResult.data });
+  } catch (e) { statusBox.textContent = 'Error en el flujo. Revisa que order-service y cost-service esten levantados.'; requestBox.textContent += `\n\nERROR:\n${JSON.stringify(e, null, 2)}`; }
+}
+async function listarOrdenes() {
+  setRequest('GET', '/api/orders');
+  const result = await api('/order-api/api/orders');
+  statusBox.textContent = `Ordenes encontradas: ${(result.data || []).length}`;
+}
+async function registrarIngreso() {
+  const id = n('ordenId');
+  if (!id) return statusBox.textContent = 'Primero crea una orden.';
+  const payload = { ingreso: n('ingreso') };
+  setRequest('POST', `/api/trip-costs/${id}/income`, payload);
+  const result = await api(`/cost-api/api/trip-costs/${id}/income`, { method:'POST', body:JSON.stringify(payload) });
+  statusBox.textContent = 'Ingreso registrado y margen calculado.';
+  updateCards({ margen: result.data });
+}
+async function consultarResumen() {
+  const id = n('ordenId');
+  if (!id) return statusBox.textContent = 'Primero crea una orden.';
+  setRequest('GET', `/api/trip-costs/${id}/summary`);
+  const result = await api(`/cost-api/api/trip-costs/${id}/summary`);
+  statusBox.textContent = 'Resumen consultado desde cost-service.';
+  updateCards({ resumen: result.data });
+}
+</script>
+</body>
+</html>

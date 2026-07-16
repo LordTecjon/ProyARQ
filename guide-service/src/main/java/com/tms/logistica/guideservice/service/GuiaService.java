@@ -1,5 +1,11 @@
 package com.tms.logistica.guideservice.service;
 
+import com.tms.logistica.guideservice.domain.port.DocumentoPdfPort;
+import com.tms.logistica.guideservice.domain.port.IdentidadValidadorPort;
+import com.tms.logistica.guideservice.domain.port.SunatOsePort;
+import com.tms.logistica.guideservice.domain.valueobject.InfoDni;
+import com.tms.logistica.guideservice.domain.valueobject.InfoRuc;
+import com.tms.logistica.guideservice.domain.valueobject.ResultadoEnvioSunat;
 import com.tms.logistica.guideservice.exception.GuiaException;
 import com.tms.logistica.guideservice.model.dto.request.CrearGuiaRequest;
 import com.tms.logistica.guideservice.model.dto.request.FiltroGuiaRequest;
@@ -22,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,69 +36,79 @@ import java.util.concurrent.atomic.AtomicInteger;
  * GuiaService - Logica de negocio del Modulo 3
  *
  * este servicio coordina el ciclo de vida completo de una Guia de Remision
- *  creacion, validacion de datos contra APIs externas, envio a
- * sunat via el ose de apisperu, consulta de estado, anulacion y descarga de
- * PDF.
+ * Electronica: creacion, validacion de datos contra APIs externas, envio a
+ * SUNAT via el OSE de APIsPerú, consulta de estado, anulacion y descarga de PDF.
  *
- * dependencias externas:
- *   - ApisPeruService: consulta ruc/dni a dniruc.apisperu.com
- *   - SunatGateway: envia la guia a facturacion.apisperu.com
- *   - GREBuilder: construye el xml segun el esquema XSD de sunat
- *   - PdfGuiaService: genera el pdf de la guia aceptada
+ * PATRÓN Anti-Corruption Layer aplicado:
+ *   Este servicio depende ÚNICAMENTE de interfaces (ports) del dominio.
+ *   No conoce ningún detalle de implementación externa:
+ *
+ *   - SunatOsePort         → envía la GRE al OSE (implementado por SunatOseAclAdapter)
+ *   - IdentidadValidadorPort → valida RUC/DNI (implementado por ApisPeruIdentidadAdapter)
+ *   - DocumentoPdfPort     → genera el PDF (implementado por ITextPdfAdapter)
+ *
+ *   Los value objects del dominio (ResultadoEnvioSunat, InfoRuc, InfoDni)
+ *   reemplazan los inner records que antes "contaminaban" el dominio con
+ *   conceptos específicos de APIsPerú (CdrResult, RucInfo, DniInfo).
  *
  * Estrategia de resiliencia:
- *   Las validaciones de ruc y dni son de mejor esfuerzo: si la api externa
- *   falla, se registra un warning y se continua con los datos manuales.
- *   El envio a sunat tambien tiene manejo de errores: si falla la conexion,
- *   la guia queda en estado PENDIENTE y el scheduler la reintenta cada 5 minutos.
+ *   Las validaciones de RUC y DNI son de mejor esfuerzo: si el port falla,
+ *   se registra un warning y se continua con los datos manuales.
+ *   El envio a SUNAT tiene manejo de errores: si falla la conexion,
+ *   la guia queda en PENDIENTE y el scheduler la reintenta cada 5 minutos.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class GuiaService {
+
     // repositorio principal de guias de remision
-    private final GuiaRemisionRepository guiaRepo;
+    private final GuiaRemisionRepository   guiaRepo;
     // repositorio para registrar todos los eventos de auditoria del modulo
-    private final AuditoriaGuiaRepository auditoriaRepo;
+    private final AuditoriaGuiaRepository  auditoriaRepo;
     // genera el siguiente numero correlativo de forma sincronizada
-    private final NumeroGuiaGenerator     numeroGenerator;
-    // adaptador para enviar la guia al ose de apisperu
-    private final SunatGateway            sunatGateway;
+    private final NumeroGuiaGenerator      numeroGenerator;
     // constructor del xml de la gre segun el esquema xsd oficial de sunat
-    private final GREBuilder              greBuilder;
-    // adaptador para validar ruc y dni contra dniruc.apisperu.com
-    private final ApisPeruService         apisPeruService;
-    // generador de pdf con itext html2pdf para guias aceptadas
-    private final PdfGuiaService          pdfGuiaService;
+    private final GREBuilder               greBuilder;
+
+    // ── Ports del ACL (interfaces del dominio — no implementaciones concretas) ──
+
+    /** Puerto de salida: envía la GRE al OSE/SUNAT. */
+    private final SunatOsePort             sunatOsePort;
+
+    /** Puerto de salida: valida RUC contra SUNAT y DNI contra RENIEC. */
+    private final IdentidadValidadorPort   identidadPort;
+
+    /** Puerto de salida: genera el PDF oficial de la GRE aceptada. */
+    private final DocumentoPdfPort         documentoPdfPort;
 
     // RF3.1: Crear guia de remision electronica
     /**
      * crea una nueva Guia de Remision Electronica en estado pendiente.
      *
      * Proceso:
-     *  1. valida ruc del remitente y destinatario contra apisperu
-     *  2. valida dni del conductor y actualiza el nombre oficial si la api
-     *  responde
+     *  1. valida ruc del remitente y destinatario via identidadPort (ACL)
+     *  2. valida dni del conductor y actualiza el nombre oficial si el port responde
      *  3. genera el numero de serie y correlativo siguiente
      *  4. persiste la guia con todos sus detalles en mysql
      *  5. registra el evento de creacion en la tabla de auditoria
      *
-     * @param "request" datos del formulario de la guia son validados con @Valid
-     * en el controller
+     * @param "request" datos del formulario de la guia — validados con @Valid en el controller
      * @param "usuario" identificador del usuario que ejecuta la accion
      * @return GuiaResponse con los datos de la guia creada y su uuid
      */
     @Transactional
     public GuiaResponse crearGuia(CrearGuiaRequest request, String usuario) {
         log.info("Creando guía para orden {} por usuario {}", request.getOrdenId(), usuario);
-        // validaciones contra apis externas
+
+        // validaciones contra sistemas externos — via ports del ACL (best-effort)
         validarRuc(request.getRemitenteRuc(), "remitente");
-        // genera serie y correlativo: siempre usa la serie T001 para guias
-        // de traslado
         validarRuc(request.getDestinatarioRuc(), "destinatario");
         validarDni(request.getConductorDni(), request);
 
+        // genera serie y correlativo: siempre usa la serie T001 para guias de traslado
         String[] numero = numeroGenerator.siguiente("T001");
+
         // construccion de la entidad con el patron builder de lombok
         GuiaRemision guia = GuiaRemision.builder()
                 .uuid(UUID.randomUUID().toString())
@@ -117,6 +134,7 @@ public class GuiaService {
                 .conductorLicencia(request.getConductorLicencia())
                 .creadoPor(usuario)
                 .build();
+
         // agrega los detalles de bienes con numero de item secuencial
         // AtomicInteger se usa para poder modificar el contador dentro del lambda
         AtomicInteger itemCounter = new AtomicInteger(1);
@@ -131,73 +149,63 @@ public class GuiaService {
                     .build();
             guia.getDetalles().add(detalle);
         });
+
         // persiste la guia y sus detalles en una sola transaccion
         GuiaRemision guardada = guiaRepo.save(guia);
+
         // registra el evento de creacion para auditoria
         registrarAuditoria(guardada.getId(), "GENERAR", AuditoriaGuia.Resultado.OK,
-                "guia " + guardada.getSerie() + "-" + guardada.getCorrelativo() + " creada", usuario, null);
+                "guia " + guardada.getSerie() + "-" + guardada.getCorrelativo() + " creada",
+                usuario, null);
 
         return GuiaMapper.toResponse(guardada);
     }
-    // RF3.3: Enviar guia a SUNAT
 
+    // RF3.3: Enviar guia a SUNAT
     /**
-     * envia la guia al ose y actualiza su estado segun la respuesta
+     * envia la guia al ose y actualiza su estado segun la respuesta del CDR.
      *
-     * solo se puede enviar una guia en estado pendiente
-     * mientras dura la llamada al ose el estado cambia a EN_PROCESO
-     * al terminar el estado queda ACEPTADA o RECHAZADA
+     * solo se puede enviar una guia en estado pendiente.
+     * mientras dura la llamada al ose el estado cambia a EN_PROCESO.
+     * al terminar el estado queda ACEPTADA o RECHAZADA segun el CDR de SUNAT.
      *
      * Si hay un error de red, la guia vuelve a PENDIENTE con un proximo_reenvio
      * programado para 5 minutos despues. El scheduler la reintentara automaticamente.
      *
+     * PATRÓN ACL: el resultado llega como ResultadoEnvioSunat (value object del dominio),
+     * no como un tipo externo de APIsPerú.
+     *
      * @param "uuid" UUID unico de la guia a enviar
      * @param "usuario" Usuario que ejecuta la accion
-     * @return GuiaResponse con el estado final y el cdr de sunat
+     * @return GuiaResponse con el estado final y el CDR de SUNAT
      */
-
     @Transactional
     public GuiaResponse enviarASunat(String uuid, String usuario) {
         GuiaRemision guia = obtenerEntidad(uuid);
+
         // solo se puede enviar una guia que este en estado PENDIENTE
         if (guia.getEstado() != EstadoGuia.PENDIENTE) {
-            throw GuiaException.estadoInvalido(guia.getEstado().name(),
-                    "enviar a sunat");
+            throw GuiaException.estadoInvalido(guia.getEstado().name(), "enviar a sunat");
         }
+
         // marca EN_PROCESO para indicar que el envio esta en curso
         guia.setEstado(EstadoGuia.EN_PROCESO);
 
         try {
-            // llama al OSE con todos los datos de la guia
-            SunatGateway.CdrResult cdr = sunatGateway.enviar(
-                    guia.getSerie(), guia.getCorrelativo(),
-                    guia.getMotivoTraslado(), guia.getModalidad(),
-                    guia.getFechaInicio().toString(),
-                    guia.getRemitenteRazon(), guia.getRemitenteDir(), guia.getRemitenteUbigeo(),
-                    guia.getDestinatarioRuc(), guia.getDestinatarioRazon(),
-                    guia.getDestinatarioDir(), guia.getDestinatarioUbigeo(),
-                    guia.getDestinoDir(), guia.getDestinoUbigeo(),
-                    guia.getVehiculoPlaca(),
-                    guia.getConductorDni(), guia.getConductorNombre(), guia.getConductorLicencia(),
-                    // convierte los detalles de la entidad al dto que espera
-                    // SunatGateway
-                    guia.getDetalles().stream()
-                            .map(d -> new SunatGateway.DetalleGuia(
-                                    d.getDescripcion(), d.getUnidadMedida(),
-                                    d.getCantidad(), d.getPesoBrutoKg()))
-                            .toList()
-            );
-            // guarda el cdr completo para auditoria y trazabilidad
-            guia.setCdrCodigo(cdr.codigo());
-            guia.setCdrDescripcion(cdr.descripcion());
-            guia.setCdrResponse(cdr.rawResponse());
-            // codigo "0" = sunat acepto la guia; cualquier otro codigo =
-            // rechazada
-            guia.setEstado("0".equals(cdr.codigo()) ? EstadoGuia.ACEPTADA : EstadoGuia.RECHAZADA);
+            // Invoca el port del ACL — GuiaService no conoce SunatOseAclAdapter
+            ResultadoEnvioSunat resultado = sunatOsePort.enviar(guia);
+
+            // persiste el CDR: el dominio trabaja con value objects, no con JSON crudo
+            guia.setCdrCodigo(resultado.codigoCdr());
+            guia.setCdrDescripcion(resultado.descripcionCdr());
+            guia.setCdrResponse(resultado.rawResponse());
+
+            // el flag aceptada() simplifica la lógica de negocio
+            guia.setEstado(resultado.aceptada() ? EstadoGuia.ACEPTADA : EstadoGuia.RECHAZADA);
             guia.setIntentosEnvio(guia.getIntentosEnvio() + 1);
 
             registrarAuditoria(guia.getId(), "ENVIAR_SUNAT", AuditoriaGuia.Resultado.OK,
-                    "CDR código: " + cdr.codigo(), usuario, null);
+                    "CDR código: " + resultado.codigoCdr(), usuario, null);
 
         } catch (Exception ex) {
             // error de red: encola para reenvio automatico en 5 minutos
@@ -214,10 +222,8 @@ public class GuiaService {
     }
 
     // RF3.7: Anular guia
-
     /**
-     * anula una guia de remision registrando el motivo y el usuario
-     * responsable.
+     * anula una guia de remision registrando el motivo y el usuario responsable.
      * no se puede anular una guia que ya esta anulada.
      *
      * @param "uuid" UUID de la guia a anular
@@ -227,6 +233,7 @@ public class GuiaService {
     @Transactional
     public GuiaResponse anularGuia(String uuid, String motivo, String usuario) {
         GuiaRemision guia = obtenerEntidad(uuid);
+
         // no tiene sentido anular una guia que ya fue anulada
         if (guia.getEstado() == EstadoGuia.ANULADA) {
             throw GuiaException.estadoInvalido("ANULADA", "anular");
@@ -244,10 +251,9 @@ public class GuiaService {
     }
 
     // RF3.4: Consultar estado de la guia
-
     /**
-     * retorna el estado actual de una guia por su UUID
-     * consulta el estado guardado en la bd local
+     * retorna el estado actual de una guia por su UUID.
+     * consulta el estado guardado en la bd local.
      *
      * @param "uuid" UUID unico de la guia
      * @return GuiaResponse con todos los datos y el estado actual
@@ -258,10 +264,9 @@ public class GuiaService {
     }
 
     // RF3.6: Listar guias por orden
-
     /**
-     * lista todas las guias asociadas a una orden de transporte
-     * una orden puede tener multiples guias
+     * lista todas las guias asociadas a una orden de transporte.
+     * una orden puede tener multiples guias.
      *
      * @param "ordenId" ID de la orden de transporte
      * @return lista de guias asociadas a esa orden
@@ -274,19 +279,17 @@ public class GuiaService {
     }
 
     // RF3.8: Historial con filtros y paginacion
-
     /**
      * retorna el historial de guias con filtros opcionales y paginacion.
      * soporta filtrar por: rango de fechas, estado y ordenId.
-     * los resultados se ordenan por fecha de creacion descendente
+     * los resultados se ordenan por fecha de creacion descendente.
+     *
      * @param "filtro" Parametros de filtro y paginacion
      * @return PaginaResponse con la lista de guias y metadatos de paginacion
      */
     @Transactional(readOnly = true)
     public PaginaResponse<GuiaResponse> listarHistorial(FiltroGuiaRequest filtro) {
-        // pagerequest encapsula el numero de pagina y el tamano del lote
         PageRequest pageable = PageRequest.of(filtro.getPagina(), filtro.getTamanio());
-        // la query en el repositorio permite que cada filtro sea opcional
         Page<GuiaRemision> pagina = guiaRepo.buscarConFiltros(
                 filtro.getFechaDesde(),
                 filtro.getFechaHasta(),
@@ -294,8 +297,6 @@ public class GuiaService {
                 filtro.getOrdenId(),
                 pageable
         );
-        // mapea la pagina de entidades al dto de respuesta con metadatos de
-        // paginacion
         return PaginaResponse.<GuiaResponse>builder()
                 .contenido(pagina.getContent().stream().map(GuiaMapper::toResponse).toList())
                 .paginaActual(pagina.getNumber())
@@ -307,37 +308,38 @@ public class GuiaService {
     }
 
     // RF3.5: Descargar PDF de la guia
-
     /**
-     * genera el pdf de una guia en estado aceptada
-     * Solo las guias aceptadas por sunat pueden descargarse como pdf oficial
+     * genera el pdf de una guia en estado ACEPTADA.
+     * Solo las guias aceptadas por SUNAT pueden descargarse como pdf oficial.
+     *
+     * PATRÓN ACL: se delega al DocumentoPdfPort — GuiaService no conoce iTextPDF.
+     *
      * @param "uuid" UUID de la guia
-     * @return Bytes del archivo pdf generado con itext
-     * @throws "GuiaException" si la guia no esta en estado aceptada
+     * @return Bytes del archivo pdf generado
+     * @throws "GuiaException" si la guia no esta en estado ACEPTADA
      */
     @Transactional(readOnly = true)
     public byte[] descargarPdf(String uuid) {
         GuiaRemision guia = obtenerEntidad(uuid);
         if (guia.getEstado() != EstadoGuia.ACEPTADA) {
-            throw GuiaException.estadoInvalido(guia.getEstado().name(),
-                    "descargar pdf");
+            throw GuiaException.estadoInvalido(guia.getEstado().name(), "descargar pdf");
         }
-        return pdfGuiaService.generarPdf(guia);
+        return documentoPdfPort.generar(guia);
     }
+
     /**
-     * retorna el nombre del archivo PDF segun el formato sunat: GRE-{serie}-
-     * {correlativo}.pdf
+     * retorna el nombre del archivo PDF segun el formato SUNAT: GRE-{serie}-{correlativo}.pdf
      */
     @Transactional(readOnly = true)
     public String nombrePdf(String uuid) {
-        return pdfGuiaService.nombreArchivo(obtenerEntidad(uuid));
+        return documentoPdfPort.nombreArchivo(obtenerEntidad(uuid));
     }
 
     // Reenvio automatico
     /**
-     * procesa la cola de guias pendientes de reenvio
-     * llamado por ReenvioScheduler cada 5 minutos
-     * reintenta el envio de guias cuyo proximo_reenvio ya vencio
+     * procesa la cola de guias pendientes de reenvio.
+     * llamado por ReenvioScheduler cada 5 minutos.
+     * reintenta el envio de guias cuyo proximo_reenvio ya vencio.
      */
     @Transactional
     public void procesarColaReenvio() {
@@ -346,65 +348,73 @@ public class GuiaService {
         pendientes.forEach(g -> enviarASunat(g.getUuid(), "SISTEMA"));
     }
 
-    // validaciones contra apis externas
-    // estas validaciones son de mejor esfuerzo: si la api falla, se registra
-    // un warning en el log pero
-    // no se lanza excepcion. La guia se crea igualmente con los datos manuales.
+    // ── Validaciones contra sistemas externos (best-effort via ACL) ─────────
 
     /**
-     * Valida un RUC contra el padron de sunat via apisperu.
-     * Si la api falla, solo registra un warning y continua.
+     * Valida un RUC contra el padrón de SUNAT vía el IdentidadValidadorPort (ACL).
+     * Si el port falla, solo registra un warning y continua.
+     * El dominio no conoce APIsPerú — solo conoce el port y el InfoRuc del dominio.
      *
-     * @param "ruc" Numero de ruc a validar
-     * @param "tipo" "remitente" o "destinatario" para identificar en el log
+     * @param ruc  Numero de RUC a validar
+     * @param tipo "remitente" o "destinatario" para identificar en el log
      */
     private void validarRuc(String ruc, String tipo) {
         try {
-            ApisPeruService.RucInfo info = apisPeruService.consultarRuc(ruc);
-            log.info("ruc {} ({}) validado: {} - {}", ruc, tipo,
-                    info.razonSocial(), info.estado());
+            Optional<InfoRuc> info = identidadPort.validarRuc(ruc);
+            info.ifPresentOrElse(
+                    i -> log.info("RUC {} ({}) validado: {} — {}", ruc, tipo, i.razonSocial(), i.estado()),
+                    () -> log.warn("RUC {} ({}) no encontrado en SUNAT", ruc, tipo)
+            );
         } catch (RuntimeException ex) {
-            // No bloquear la creacion si la API de validacion no responde
-            log.warn("no se pudo validar ruc {} ({}): {}", ruc, tipo,
-                    ex.getMessage());
+            // No bloquear la creacion si el port de validacion no responde
+            log.warn("no se pudo validar ruc {} ({}): {}", ruc, tipo, ex.getMessage());
         }
     }
+
     /**
-     * valida el dni del conductor contra renic via apisperu.
-     * si la api responde, actualiza el nombre en el request con el nombre
-     * oficial.
-     * si la api falla, mantiene el nombre ingresado manualmente.
-     * @param "dni" Numero de DNI del conductor
-     * @param "request" Request de creacion donde se actualiza el nombre si corresponde
+     * Valida el DNI del conductor vía el IdentidadValidadorPort (ACL).
+     * Si el port responde, actualiza el nombre en el request con el nombre oficial de RENIEC.
+     * Si falla, mantiene el nombre ingresado manualmente.
+     *
+     * @param dni     Numero de DNI del conductor
+     * @param request Request de creacion donde se actualiza el nombre si corresponde
      */
     private void validarDni(String dni, CrearGuiaRequest request) {
         try {
-            ApisPeruService.DniInfo info = apisPeruService.consultarDni(dni);
-            log.info("dni {} del conductor validado: {}", dni,
-                    info.nombreCompleto());
-            request.setConductorNombre(info.nombreCompleto());
+            Optional<InfoDni> info = identidadPort.validarDni(dni);
+            info.ifPresentOrElse(
+                    i -> {
+                        log.info("DNI {} del conductor validado: {}", dni, i.nombreCompleto());
+                        request.setConductorNombre(i.nombreCompleto());
+                    },
+                    () -> log.warn("DNI {} del conductor no encontrado en RENIEC", dni)
+            );
         } catch (RuntimeException ex) {
-            log.warn("No se pudo validar dni del conductor {}: {}", dni,
-                    ex.getMessage());
+            log.warn("No se pudo validar DNI del conductor {}: {}", dni, ex.getMessage());
         }
     }
-    // Metodos auxiliares internos
+
+    // ── Métodos auxiliares internos ──────────────────────────────────────────
+
     /**
      * busca una guia por UUID y lanza GuiaException si no existe.
      * centraliza el manejo de "not found" para todos los metodos publicos.
-     */private GuiaRemision obtenerEntidad(String uuid) {
+     */
+    private GuiaRemision obtenerEntidad(String uuid) {
         return guiaRepo.findByUuid(uuid)
                 .orElseThrow(() -> GuiaException.noEncontrada(uuid));
     }
+
     /**
-     *persiste un registro en la tabla de auditoria.
+     * persiste un registro en la tabla de auditoria.
      * Se llama en todas las operaciones sensibles: crear, enviar, anular.
-     * @param "guiaId" ID interno de la guia afectada
-     * @param "accion" Codigo de la accion ejecutada
+     *
+     * @param "guiaId"   ID interno de la guia afectada
+     * @param "accion"   Codigo de la accion ejecutada
      * @param "resultado" Resultado de la accion
-     * @param "detalle" Descripcion adicional del resultado
-     * @param "usuario" Usuario que ejecuto la accion
-     * @param "ip" Direccion IP del cliente
+     * @param "detalle"  Descripcion adicional del resultado
+     * @param "usuario"  Usuario que ejecuto la accion
+     * @param "ip"       Direccion IP del cliente
      */
     private void registrarAuditoria(Long guiaId, String accion,
                                     AuditoriaGuia.Resultado resultado,

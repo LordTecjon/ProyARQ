@@ -1,42 +1,52 @@
-package com.tms.logistica.guideservice.service;
+package com.tms.logistica.guideservice.acl.pdf;
 
 import com.itextpdf.html2pdf.HtmlConverter;
+import com.tms.logistica.guideservice.domain.port.DocumentoPdfPort;
 import com.tms.logistica.guideservice.model.entity.GuiaRemision;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 
 /**
- * @deprecated Reemplazado por el patrón Anti-Corruption Layer.
+ * ITextPdfAdapter — Adaptador ACL para generación de PDF con iText html2pdf
  *
- * Esta clase fue sustituida por:
- *   - {@link com.tms.logistica.guideservice.domain.port.DocumentoPdfPort}
- *     (interfaz/port del dominio)
- *   - {@link com.tms.logistica.guideservice.acl.pdf.ITextPdfAdapter}
- *     (implementación ACL que encapsula la generación PDF con iText html2pdf)
+ * Implementa el puerto DocumentoPdfPort del dominio utilizando
+ * la librería com.itextpdf:html2pdf como motor de renderizado PDF.
  *
- * GuiaService ya NO depende de esta clase.
- * Este archivo puede eliminarse en la siguiente limpieza de código.
+ * PATRÓN: Anti-Corruption Layer (adaptador de salida)
+ *
+ * El dominio (GuiaService) solo conoce DocumentoPdfPort y trabaja con byte[].
+ * No sabe nada de iText, HTML, ni detalles del formato del documento.
+ * Si se cambia la librería de PDF (a JasperReports, Apache PDFBox, etc.),
+ * solo se crea un nuevo adaptador sin tocar GuiaService.
+ *
+ * El PDF generado incluye:
+ *   - Datos del traslado (motivo, modalidad, fechas)
+ *   - Remitente y destinatario con RUC, razón social, dirección y ubigeo
+ *   - Datos del transportista (placa, conductor, licencia)
+ *   - Tabla de bienes transportados (descripción, U.M., cantidad, peso)
+ *   - Enlace de verificación SUNAT con código CDR
+ *   - Footer con fecha de generación
  */
-@Deprecated(since = "ACL refactoring", forRemoval = true)
 @Component
 @Slf4j
-public class PdfGuiaService {
+public class ITextPdfAdapter implements DocumentoPdfPort {
 
     private static final String QR_BASE_URL =
             "https://e-beta.sunat.gob.pe/ol-ti-itconsulta/consulta";
 
     /**
-     * genera el contenido html del pdf de la guia.
-     * retorna los bytes del archivo.
+     * Genera el PDF de la GRE y retorna sus bytes.
+     *
+     * @param guia entidad de la GRE en estado ACEPTADA
+     * @return bytes del archivo PDF
      */
-
-    public byte[] generarPdf(GuiaRemision guia) {
-        log.info("generando pdf para guia {}-{}", guia.getSerie(),
-                guia.getCorrelativo());
+    @Override
+    public byte[] generar(GuiaRemision guia) {
+        log.info("[ACL-PDF] Generando PDF para guía {}-{}",
+                guia.getSerie(), guia.getCorrelativo());
 
         String qrUrl = String.format("%s?ruc=%s&tipo=09&serie=%s&numero=%s",
                 QR_BASE_URL, guia.getRemitenteRuc(), guia.getSerie(), guia.getCorrelativo());
@@ -45,20 +55,25 @@ public class PdfGuiaService {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         HtmlConverter.convertToPdf(html, baos);
+
+        log.info("[ACL-PDF] PDF generado exitosamente — {} bytes", baos.size());
         return baos.toByteArray();
     }
 
     /**
-     * nombre del archivo segun formato sunat: GRE-{serie}-{correlativo}.pdf
+     * Retorna el nombre del archivo PDF según el formato SUNAT.
+     * Ejemplo: "GRE-T001-00000001.pdf"
      */
+    @Override
     public String nombreArchivo(GuiaRemision guia) {
         return String.format("GRE-%s-%s.pdf", guia.getSerie(), guia.getCorrelativo());
     }
 
-    // Construcción del HTML
+    // ── Construcción del HTML ───────────────────────────────────────────────
+
     private String construirHtml(GuiaRemision guia, String qrUrl) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        String fechaEmision = guia.getFechaInicio().format(fmt);
+        String fechaEmision  = guia.getFechaInicio().format(fmt);
         String fechaCreacion = guia.getCreadoEn() != null
                 ? guia.getCreadoEn().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                 : "-";
@@ -194,7 +209,7 @@ public class PdfGuiaService {
                 guia.getConductorDni(), guia.getConductorLicencia(),
                 detalles,
                 qrUrl,
-                guia.getCdrCodigo() != null ? guia.getCdrCodigo() : "-",
+                guia.getCdrCodigo()      != null ? guia.getCdrCodigo()      : "-",
                 guia.getCdrDescripcion() != null ? guia.getCdrDescripcion() : "-",
                 fechaCreacion
         );

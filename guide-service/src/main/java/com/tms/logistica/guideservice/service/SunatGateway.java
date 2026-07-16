@@ -12,26 +12,22 @@ import java.nio.charset.StandardCharsets;
 
 
 /**
- * SunatGateway - Adaptador para facturacion.apisperu.com
+ * @deprecated Reemplazado por el patrón Anti-Corruption Layer.
  *
- * Responsabilidad: construir el cuerpo JSON del request, enviarlo al ose
- * (Operador de Servicios Electronicos) de apisperu, y parsear el cdr
- * que devuelve sunat como respuesta.
+ * Esta clase fue sustituida por:
+ *   - {@link com.tms.logistica.guideservice.domain.port.SunatOsePort}
+ *     (interfaz/port del dominio)
+ *   - {@link com.tms.logistica.guideservice.acl.sunat.SunatOseAclAdapter}
+ *     (implementación ACL que encapsula la comunicación con APIsPerú)
+ *   - {@link com.tms.logistica.guideservice.acl.sunat.translator.SunatResponseTranslator}
+ *     (translator que convierte la respuesta de APIsPerú al value object del dominio)
+ *   - {@link com.tms.logistica.guideservice.domain.valueobject.ResultadoEnvioSunat}
+ *     (value object del dominio que reemplaza el inner record CdrResult)
  *
- * El flujo completo sería
- * guide-service --> facturacion.apisperu.com --> sunat Beta
- *
- * apisperu actua como intermediario: recibe el JSON del TMS, lo convierte
- * al formato XML/SOAP que sunat exige, lo firma digitalmente, y lo envia.
- * luego devuelve el cdr con el codigo de aceptacion o rechazo.
- *
- * adapter + gateway tactica de interoperabilidad "gestionar interfaces".
- * grebuilder esta separado de esta clase para que los cambios en el esquema
- * XSD de sunat solo afecten a grebuilder, sin tocar la logica de comunicacion.
- *
- * Autenticacion: bearer token jwt distinto al de apisperuservice.
- * Se configura en apisperu.facturacion.token en application.properties.
+ * GuiaService ya NO depende de esta clase.
+ * Este archivo puede eliminarse en la siguiente limpieza de código.
  */
+@Deprecated(since = "ACL refactoring", forRemoval = true)
 @Slf4j
 @Component
 public class SunatGateway {

@@ -11,23 +11,23 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * ApisPeruService - Adaptador para la API dniruc.apisperu.com
+ * @deprecated Reemplazado por el patrón Anti-Corruption Layer.
  *
- * Responsabilidad: encapsular toda la comunicacion con la api externa que
- * provee datos de RUC y DNI
+ * Esta clase fue sustituida por:
+ *   - {@link com.tms.logistica.guideservice.domain.port.IdentidadValidadorPort}
+ *     (interfaz/port del dominio)
+ *   - {@link com.tms.logistica.guideservice.acl.identidad.ApisPeruIdentidadAdapter}
+ *     (implementación ACL que encapsula la comunicación con APIsPerú DNI/RUC)
+ *   - {@link com.tms.logistica.guideservice.acl.identidad.translator.IdentidadResponseTranslator}
+ *     (translator que convierte el JSON de APIsPerú a value objects del dominio)
+ *   - {@link com.tms.logistica.guideservice.domain.valueobject.InfoRuc} e
+ *     {@link com.tms.logistica.guideservice.domain.valueobject.InfoDni}
+ *     (value objects del dominio que reemplazan los inner records RucInfo y DniInfo)
  *
- * Patron de diseno: Adapter (tactica de interoperabilidad "Gestionar interfaces")
- * GuiaService no conoce los detalles del protocolo HTTP ni el formato JSON
- * de esta API; solo llama a consultarRuc() y consultarDni() como metodos locales
- *
- * Autenticacion: Bearer Token JWT configurado en application.properties bajo
- * la propiedad apisperu.dniruc.token
- * este token es distinto al de facturacion
- *
- * Manejo de errores: si la api falla se lanza RuntimeException. GuiaService
- * la captura con un try-catch y registra un warning, permitiendo continuar
- * con los datos ingresados manualmente
+ * GuiaService y ValidacionController ya NO dependen de esta clase.
+ * Este archivo puede eliminarse en la siguiente limpieza de código.
  */
+@Deprecated(since = "ACL refactoring", forRemoval = true)
 @Service
 @Slf4j
 public class ApisPeruService {

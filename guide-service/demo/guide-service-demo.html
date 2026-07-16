@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>TMS · Guide Service Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+          --bg: #0a0a0f;
+          --surface: #13131a;
+          --border: #1e1e2e;
+          --accent: #e85d27;
+          --accent2: #f7a325;
+          --green: #22c55e;
+          --red: #ef4444;
+          --yellow: #eab308;
+          --text: #e8e8f0;
+          --muted: #6b6b80;
+          --mono: 'Space Mono', monospace;
+          --sans: 'DM Sans', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+        /* Header */
+        .header {
+          border-bottom: 1px solid var(--border);
+          padding: 18px 32px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: var(--surface);
+        }
+        .logo { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 2px; }
+        .logo span { color: var(--text); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-left: auto; animation: pulse 2s infinite; }
+        .status-label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        /* Layout */
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* Cards */
+        .card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 24px;
+        }
+        .card-title {
+          font-family: var(--mono);
+          font-size: 11px;
+          color: var(--accent);
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          margin-bottom: 20px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .card-title .badge {
+          background: var(--accent);
+          color: white;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; }
+        input, select {
+          width: 100%;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          color: var(--text);
+          padding: 9px 12px;
+          border-radius: 6px;
+          font-size: 13px;
+          font-family: var(--sans);
+          transition: border-color .2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* Buttons */
+        .btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-family: var(--mono);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 1px;
+          transition: all .2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #ff6b35; transform: translateY(-1px); }
+        .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+        .btn-secondary:hover { background: var(--accent); color: white; }
+        .btn-green { background: var(--green); color: #000; }
+        .btn-green:hover { background: #16a34a; transform: translateY(-1px); }
+        .btn-red { background: var(--red); color: white; }
+        .btn-red:hover { background: #dc2626; }
+        .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+        /* Response panel */
+        .response-panel {
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 16px;
+          margin-top: 16px;
+          min-height: 80px;
+          font-family: var(--mono);
+          font-size: 12px;
+          line-height: 1.6;
+          overflow-x: auto;
+        }
+        .response-panel.success { border-color: var(--green); }
+        .response-panel.error { border-color: var(--red); }
+        pre { white-space: pre-wrap; word-break: break-word; }
+
+        /* Estado badges */
+        .estado {
+          display: inline-block;
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-family: var(--mono);
+          font-weight: 700;
+          letter-spacing: 1px;
+        }
+        .estado-ACEPTADA { background: #16532420; color: var(--green); border: 1px solid var(--green); }
+        .estado-RECHAZADA { background: #7f1d1d20; color: var(--red); border: 1px solid var(--red); }
+        .estado-PENDIENTE { background: #78350f20; color: var(--yellow); border: 1px solid var(--yellow); }
+        .estado-EN_PROCESO { background: #1e3a5f20; color: #60a5fa; border: 1px solid #60a5fa; }
+        .estado-ANULADA { background: #1f1f3020; color: var(--muted); border: 1px solid var(--muted); }
+
+        /* Guía card */
+        .guia-card {
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 14px 16px;
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          transition: border-color .2s;
+        }
+        .guia-card:hover { border-color: var(--accent); }
+        .guia-numero { font-family: var(--mono); font-size: 13px; color: var(--accent); flex: 1; }
+        .guia-orden { font-size: 12px; color: var(--muted); }
+        .guia-fecha { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+        /* Steps indicator */
+        .steps {
+          display: flex;
+          gap: 0;
+          margin-bottom: 28px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .step {
+          flex: 1;
+          padding: 12px;
+          text-align: center;
+          font-family: var(--mono);
+          font-size: 11px;
+          color: var(--muted);
+          border-right: 1px solid var(--border);
+          cursor: pointer;
+          transition: all .2s;
+        }
+        .step:last-child { border-right: none; }
+        .step.active { background: var(--accent); color: white; }
+        .step.done { background: #16532420; color: var(--green); }
+        .step-num { display: block; font-size: 18px; margin-bottom: 2px; }
+
+        /* Spinner */
+        .spinner {
+          width: 14px; height: 14px;
+          border: 2px solid rgba(255,255,255,.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin .8s linear infinite;
+          display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* UUID display */
+        .uuid-display {
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          padding: 8px 12px;
+          font-family: var(--mono);
+          font-size: 11px;
+          color: var(--accent2);
+          margin-top: 8px;
+          word-break: break-all;
+        }
+
+        /* Historial table */
+        .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .hist-table th { text-align: left; padding: 8px 10px; font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+        .hist-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); }
+        .hist-table tr:hover td { background: var(--surface); }
+
+        /* Sección full-width */
+        .full { grid-column: 1 / -1; }
+
+        /* API call log */
+        .api-log {
+          font-family: var(--mono);
+          font-size: 11px;
+          color: var(--muted);
+          margin-top: 8px;
+        }
+        .api-log .method { color: var(--accent); }
+        .api-log .url { color: var(--accent2); }
+        .api-log .status-ok { color: var(--green); }
+        .api-log .status-err { color: var(--red); }
+
+        .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+        .section-header { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+        .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo">TMS · <span>GUIDE SERVICE</span></div>
+    <div style="font-size:12px; color:var(--muted); margin-left:8px;">Módulo 3 — Guías de Remisión SUNAT</div>
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-label" id="statusLabel">Conectando...</div>
+</div>
+
+<div class="container">
+    <div style="margin-bottom:28px;">
+        <div class="section-header">Demo de Integración con APIs de Terceros</div>
+        <div class="section-sub">APIs Perú · facturacion.apisperu.com · dniruc.apisperu.com → guide-service en localhost:8083</div>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps">
+        <div class="step active" id="step1"><span class="step-num">①</span>Validar RUC/DNI</div>
+        <div class="step" id="step2"><span class="step-num">②</span>Crear Guía</div>
+        <div class="step" id="step3"><span class="step-num">③</span>Enviar a SUNAT</div>
+        <div class="step" id="step4"><span class="step-num">④</span>Historial</div>
+    </div>
+
+    <div class="grid">
+
+        <!-- ── PANEL 1: Validación ── -->
+        <div class="card" id="panel-validacion">
+            <div class="card-title">
+                <span>① Validar RUC / DNI</span>
+                <span class="badge">APIs Perú</span>
+            </div>
+
+            <div class="form-group">
+                <label>Consultar RUC</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="inputRuc" placeholder="20100070970" maxlength="11"/>
+                    <button class="btn btn-secondary" onclick="consultarRuc()">Consultar</button>
+                </div>
+            </div>
+            <div class="api-log" id="logRuc"></div>
+            <div class="response-panel" id="respRuc" style="min-height:50px;">
+                <span style="color:var(--muted)">// Ingresa un RUC y presiona Consultar</span>
+            </div>
+
+            <hr class="divider" style="margin:16px 0;"/>
+
+            <div class="form-group">
+                <label>Consultar DNI</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="inputDni" placeholder="12345678" maxlength="8"/>
+                    <button class="btn btn-secondary" onclick="consultarDni()">Consultar</button>
+                </div>
+            </div>
+            <div class="api-log" id="logDni"></div>
+            <div class="response-panel" id="respDni" style="min-height:50px;">
+                <span style="color:var(--muted)">// Ingresa un DNI y presiona Consultar</span>
+            </div>
+        </div>
+
+        <!-- ── PANEL 2: Crear Guía ── -->
+        <div class="card">
+            <div class="card-title">
+                <span>② Crear Guía de Remisión</span>
+                <span class="badge">RF3.1</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Orden ID</label>
+                    <input type="number" id="ordenId" value="1001"/>
+                </div>
+                <div class="form-group">
+                    <label>Fecha Inicio</label>
+                    <input type="date" id="fechaInicio"/>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>RUC Remitente</label>
+                    <input type="text" id="rucRemitente" value="21234567012"/>
+                </div>
+                <div class="form-group">
+                    <label>RUC Destinatario</label>
+                    <input type="text" id="rucDest" value="21234567012"/>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Placa Vehículo</label>
+                    <input type="text" id="placa" value="ABC-123"/>
+                </div>
+                <div class="form-group">
+                    <label>DNI Conductor</label>
+                    <input type="text" id="dniConductor" value="12345678"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción del bien</label>
+                <input type="text" id="descBien" value="CAJAS DE LECHE EVAPORADA"/>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Cantidad</label>
+                    <input type="number" id="cantidad" value="100"/>
+                </div>
+                <div class="form-group">
+                    <label>Peso Bruto (kg)</label>
+                    <input type="number" id="pesoBruto" value="480"/>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btnCrear" onclick="crearGuia()">
+                    ＋ Crear Guía
+                </button>
+            </div>
+            <div class="api-log" id="logCrear"></div>
+            <div id="uuidCreado" style="display:none;">
+                <div style="font-size:11px;color:var(--muted);margin-top:12px;">UUID de la guía creada:</div>
+                <div class="uuid-display" id="uuidValor"></div>
+            </div>
+            <div class="response-panel" id="respCrear" style="min-height:60px;">
+                <span style="color:var(--muted)">// La guía se creará en estado PENDIENTE</span>
+            </div>
+        </div>
+
+        <!-- ── PANEL 3: Enviar a SUNAT ── -->
+        <div class="card">
+            <div class="card-title">
+                <span>③ Enviar a SUNAT</span>
+                <span class="badge">RF3.3</span>
+            </div>
+
+            <div class="form-group">
+                <label>UUID de la guía</label>
+                <input type="text" id="uuidEnviar" placeholder="Pega el UUID aquí o créala arriba"/>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-green" id="btnEnviar" onclick="enviarSunat()">
+                    ▶ Enviar a SUNAT
+                </button>
+                <button class="btn btn-secondary" onclick="consultarEstado()">
+                    ↻ Ver Estado
+                </button>
+            </div>
+            <div class="api-log" id="logEnviar"></div>
+            <div class="response-panel" id="respEnviar" style="min-height:80px;">
+                <span style="color:var(--muted)">// APIsPerú → SUNAT Beta</span>
+            </div>
+
+            <hr class="divider" style="margin:16px 0;"/>
+
+            <div class="card-title" style="margin-bottom:12px;">
+                <span>Anular / Descargar PDF</span>
+                <span class="badge">RF3.5 · RF3.7</span>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-red" onclick="anularGuia()">✕ Anular</button>
+                <button class="btn btn-secondary" onclick="descargarPdf()">⬇ PDF</button>
+            </div>
+            <div class="api-log" id="logAcciones"></div>
+        </div>
+
+        <!-- ── PANEL 4: Historial ── -->
+        <div class="card">
+            <div class="card-title">
+                <span>④ Historial de Guías</span>
+                <span class="badge">RF3.8</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="ACEPTADA">Aceptada</option>
+                        <option value="RECHAZADA">Rechazada</option>
+                        <option value="ANULADA">Anulada</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Orden ID</label>
+                    <input type="number" id="filtroOrden" placeholder="Ej: 1001"/>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="cargarHistorial()">↺ Cargar Historial</button>
+            <div class="api-log" id="logHistorial"></div>
+
+            <div id="historialContainer" style="margin-top:14px;">
+                <div style="color:var(--muted);font-size:12px;font-family:var(--mono);">// Presiona "Cargar Historial"</div>
+            </div>
+        </div>
+
+    </div><!-- /grid -->
+</div><!-- /container -->
+
+<script>
+    const BASE = 'http://localhost:8083';
+
+    // Verificar estado del servicio al cargar
+    window.onload = () => {
+      // Fecha de mañana por defecto
+      const mañana = new Date();
+      mañana.setDate(mañana.getDate() + 1);
+      document.getElementById('fechaInicio').value = mañana.toISOString().split('T')[0];
+
+      fetch(`${BASE}/api/v1/guias/historial`)
+        .then(r => {
+          document.getElementById('statusDot').style.background = r.ok ? 'var(--green)' : 'var(--yellow)';
+          document.getElementById('statusLabel').textContent = r.ok ? 'Servicio activo :8083' : 'Servicio con errores';
+        })
+        .catch(() => {
+          document.getElementById('statusDot').style.background = 'var(--red)';
+          document.getElementById('statusLabel').textContent = 'Servicio offline';
+        });
+    };
+
+    function setLog(id, method, url, status) {
+      const el = document.getElementById(id);
+      const color = status >= 200 && status < 300 ? 'status-ok' : 'status-err';
+      el.innerHTML = `<span class="method">${method}</span> <span class="url">${url}</span> → <span class="${color}">${status}</span>`;
+    }
+
+    function formatJson(data) {
+      return JSON.stringify(data, null, 2)
+        .replace(/"([^"]+)":/g, '<span style="color:#7dd3fc">"$1"</span>:')
+        .replace(/: "([^"]+)"/g, ': <span style="color:#86efac">"$1"</span>')
+        .replace(/: (true|false)/g, ': <span style="color:#f9a8d4">$1</span>')
+        .replace(/: (\d+\.?\d*)/g, ': <span style="color:#fcd34d">$1</span>');
+    }
+
+    // ── Validar RUC ──────────────────────────────────────────────
+    async function consultarRuc() {
+      const ruc = document.getElementById('inputRuc').value.trim();
+      if (!ruc) return;
+      const url = `${BASE}/api/v1/validar/ruc/${ruc}`;
+      const el = document.getElementById('respRuc');
+      el.innerHTML = '<div class="spinner"></div>';
+      el.className = 'response-panel';
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        setLog('logRuc', 'GET', url, r.status);
+        el.className = `response-panel ${r.ok ? 'success' : 'error'}`;
+        el.innerHTML = `<pre>${formatJson(data)}</pre>`;
+      } catch(e) {
+        setLog('logRuc', 'GET', url, 'ERR');
+        el.className = 'response-panel error';
+        el.innerHTML = `<span style="color:var(--red)">// Error de conexión: ${e.message}</span>`;
+      }
+    }
+
+    // ── Validar DNI ──────────────────────────────────────────────
+    async function consultarDni() {
+      const dni = document.getElementById('inputDni').value.trim();
+      if (!dni) return;
+      const url = `${BASE}/api/v1/validar/dni/${dni}`;
+      const el = document.getElementById('respDni');
+      el.innerHTML = '<div class="spinner"></div>';
+      el.className = 'response-panel';
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        setLog('logDni', 'GET', url, r.status);
+        el.className = `response-panel ${r.ok ? 'success' : 'error'}`;
+        el.innerHTML = `<pre>${formatJson(data)}</pre>`;
+      } catch(e) {
+        el.className = 'response-panel error';
+        el.innerHTML = `<span style="color:var(--red)">// Error: ${e.message}</span>`;
+      }
+    }
+
+    // ── Crear Guía ───────────────────────────────────────────────
+    async function crearGuia() {
+      const btn = document.getElementById('btnCrear');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creando...';
+      const el = document.getElementById('respCrear');
+      el.className = 'response-panel';
+
+      const body = {
+        ordenId: parseInt(document.getElementById('ordenId').value),
+        motivoTraslado: "01",
+        modalidad: "02",
+        fechaInicio: document.getElementById('fechaInicio').value,
+        remitenteRuc: document.getElementById('rucRemitente').value,
+        remitenteRazon: "EMPRESA DE PRUEBA SAC",
+        remitenteDir: "AV. PRUEBA 123, LIMA",
+        remitenteUbigeo: "150101",
+        destinatarioRuc: document.getElementById('rucDest').value,
+        destinatarioRazon: "CLIENTE FINAL SAC",
+        destinatarioDir: "JR. LOS PINOS 456, CALLAO",
+        destinatarioUbigeo: "070101",
+        destinoDir: "JR. LOS PINOS 456, CALLAO",
+        destinoUbigeo: "070101",
+        vehiculoPlaca: document.getElementById('placa').value,
+        conductorDni: document.getElementById('dniConductor').value,
+        conductorNombre: "JUAN CARLOS PEREZ LOPEZ",
+        conductorLicencia: "Q12345678",
+        detalles: [{
+          descripcion: document.getElementById('descBien').value,
+          unidadMedida: "NIU",
+          cantidad: parseFloat(document.getElementById('cantidad').value),
+          pesoBrutoKg: parseFloat(document.getElementById('pesoBruto').value)
+        }]
+      };
+
+      const url = `${BASE}/api/v1/guias`;
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Usuario': 'demo-user' },
+          body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        setLog('logCrear', 'POST', url, r.status);
+        el.className = `response-panel ${r.ok ? 'success' : 'error'}`;
+        el.innerHTML = `<pre>${formatJson(data)}</pre>`;
+
+        if (r.ok && data.data?.uuid) {
+          const uuid = data.data.uuid;
+          document.getElementById('uuidValor').textContent = uuid;
+          document.getElementById('uuidCreado').style.display = 'block';
+          document.getElementById('uuidEnviar').value = uuid;
+          document.getElementById('step2').className = 'step done';
+        }
+      } catch(e) {
+        el.className = 'response-panel error';
+        el.innerHTML = `<span style="color:var(--red)">// Error: ${e.message}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '＋ Crear Guía';
+      }
+    }
+
+    // ── Enviar a SUNAT ───────────────────────────────────────────
+    async function enviarSunat() {
+      const uuid = document.getElementById('uuidEnviar').value.trim();
+      if (!uuid) return alert('Ingresa o crea una guía primero');
+      const btn = document.getElementById('btnEnviar');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Enviando...';
+      const el = document.getElementById('respEnviar');
+      const url = `${BASE}/api/v1/guias/${uuid}/enviar`;
+      try {
+        const r = await fetch(url, { method: 'POST', headers: { 'X-Usuario': 'demo-user' } });
+        const data = await r.json();
+        setLog('logEnviar', 'POST', url, r.status);
+        el.className = `response-panel ${r.ok ? 'success' : 'error'}`;
+        el.innerHTML = `<pre>${formatJson(data)}</pre>`;
+        if (data.data?.estado) {
+          document.getElementById('step3').className = 'step done';
+        }
+      } catch(e) {
+        el.className = 'response-panel error';
+        el.innerHTML = `<span style="color:var(--red)">// Error: ${e.message}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '▶ Enviar a SUNAT';
+      }
+    }
+
+    // ── Consultar Estado ─────────────────────────────────────────
+    async function consultarEstado() {
+      const uuid = document.getElementById('uuidEnviar').value.trim();
+      if (!uuid) return alert('Ingresa un UUID primero');
+      const el = document.getElementById('respEnviar');
+      const url = `${BASE}/api/v1/guias/${uuid}`;
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        setLog('logEnviar', 'GET', url, r.status);
+        el.className = `response-panel ${r.ok ? 'success' : 'error'}`;
+        el.innerHTML = `<pre>${formatJson(data)}</pre>`;
+      } catch(e) {
+        el.className = 'response-panel error';
+        el.innerHTML = `<span style="color:var(--red)">// Error: ${e.message}</span>`;
+      }
+    }
+
+    // ── Anular ───────────────────────────────────────────────────
+    async function anularGuia() {
+      const uuid = document.getElementById('uuidEnviar').value.trim();
+      if (!uuid) return alert('Ingresa un UUID primero');
+      const motivo = prompt('Motivo de anulación:');
+      if (!motivo) return;
+      const url = `${BASE}/api/v1/guias/${uuid}/anular?motivo=${encodeURIComponent(motivo)}`;
+      try {
+        const r = await fetch(url, { method: 'POST', headers: { 'X-Usuario': 'demo-user' } });
+        const data = await r.json();
+        setLog('logAcciones', 'POST', url, r.status);
+        document.getElementById('respEnviar').className = `response-panel ${r.ok ? 'success' : 'error'}`;
+        document.getElementById('respEnviar').innerHTML = `<pre>${formatJson(data)}</pre>`;
+      } catch(e) {
+        setLog('logAcciones', 'POST', url, 'ERR');
+      }
+    }
+
+    // ── Descargar PDF ────────────────────────────────────────────
+    async function descargarPdf() {
+      const uuid = document.getElementById('uuidEnviar').value.trim();
+      if (!uuid) return alert('Ingresa un UUID primero');
+      setLog('logAcciones', 'GET', `${BASE}/api/v1/guias/${uuid}/pdf`, '→');
+      window.open(`${BASE}/api/v1/guias/${uuid}/pdf`, '_blank');
+    }
+
+    // ── Historial ────────────────────────────────────────────────
+    async function cargarHistorial() {
+      const estado = document.getElementById('filtroEstado').value;
+      const orden = document.getElementById('filtroOrden').value;
+      let url = `${BASE}/api/v1/guias/historial?tamanio=20`;
+      if (estado) url += `&estado=${estado}`;
+      if (orden) url += `&ordenId=${orden}`;
+
+      const container = document.getElementById('historialContainer');
+      container.innerHTML = '<div class="spinner" style="margin:10px 0;"></div>';
+
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        setLog('logHistorial', 'GET', url, r.status);
+
+        const guias = data.data?.contenido || [];
+        const total = data.data?.totalElementos || 0;
+
+        if (guias.length === 0) {
+          container.innerHTML = '<div style="color:var(--muted);font-size:12px;font-family:var(--mono);">// Sin resultados</div>';
+          return;
+        }
+
+        let html = `<div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:10px;">${total} guía(s) encontrada(s)</div>`;
+        html += `<table class="hist-table"><thead><tr>
+          <th>Número</th><th>Orden</th><th>Estado</th><th>Fecha</th><th>Acción</th>
+        </tr></thead><tbody>`;
+
+        guias.forEach(g => {
+          const estadoClass = `estado estado-${g.estado}`;
+          html += `<tr>
+            <td style="font-family:var(--mono);color:var(--accent)">${g.numeroCompleto}</td>
+            <td style="color:var(--muted)">#${g.ordenId}</td>
+            <td><span class="${estadoClass}">${g.estado}</span></td>
+            <td style="font-family:var(--mono);font-size:11px">${g.fechaInicio}</td>
+            <td>
+              <button class="btn btn-secondary" style="padding:4px 10px;font-size:10px;"
+                onclick="document.getElementById('uuidEnviar').value='${g.uuid}';consultarEstado()">
+                Ver
+              </button>
+            </td>
+          </tr>`;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        document.getElementById('step4').className = 'step done';
+      } catch(e) {
+        container.innerHTML = `<span style="color:var(--red);font-size:12px;">// Error: ${e.message}</span>`;
+      }
+    }
+</script>
+</body>
+</html>

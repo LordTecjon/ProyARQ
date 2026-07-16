@@ -5,6 +5,7 @@ const path = require('path');
 const PORT = process.env.PORT || 5173;
 const ORDER_TARGET = process.env.ORDER_TARGET || 'http://localhost:8081';
 const COST_TARGET = process.env.COST_TARGET || 'http://localhost:8082';
+const BILLING_TARGET = process.env.BILLING_TARGET || 'http://localhost:8087';
 
 function sendFile(res, file, type) {
   fs.readFile(file, (err, data) => {
@@ -55,6 +56,7 @@ http.createServer((req, res) => {
 
   if (req.url.startsWith('/order-api/')) return proxy(req, res, ORDER_TARGET, '/order-api');
   if (req.url.startsWith('/cost-api/')) return proxy(req, res, COST_TARGET, '/cost-api');
+  if (req.url.startsWith('/billing-api/')) return proxy(req, res, BILLING_TARGET, '/billing-api');
 
   if (req.url === '/' || req.url.startsWith('/index.html')) {
     return sendFile(res, path.join(__dirname, 'index.html'), 'text/html; charset=utf-8');
@@ -64,6 +66,7 @@ http.createServer((req, res) => {
   res.end('Ruta no encontrada');
 }).listen(PORT, () => {
   console.log(`Frontend demo: http://localhost:${PORT}`);
-  console.log(`Proxy order-service -> ${ORDER_TARGET}`);
-  console.log(`Proxy cost-service  -> ${COST_TARGET}`);
+  console.log(`Proxy order-service   -> ${ORDER_TARGET}`);
+  console.log(`Proxy cost-service    -> ${COST_TARGET}`);
+  console.log(`Proxy billing-service -> ${BILLING_TARGET}`);
 });

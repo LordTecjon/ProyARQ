@@ -60,6 +60,27 @@
     </section>
 
     <section class="full">
+      <h2>3. Facturacion (billing-service)</h2>
+      <p class="muted">Emite el comprobante electronico de la orden. Toma el cliente de la seccion 1 y el importe del ingreso (seccion 2). El servicio calcula el IGV (18%), genera serie/correlativo y simula el envio a SUNAT.</p>
+      <div class="row">
+        <div><label>Tipo de comprobante</label><select id="tipoComprobante"><option value="FACTURA">FACTURA</option><option value="BOLETA">BOLETA</option></select></div>
+        <div><label>Descripcion del servicio</label><input id="descripcionServicio" value="Servicio de transporte de carga"></div>
+      </div>
+      <div class="row">
+        <div><label>Importe sin IGV (S/)</label><input id="importeFactura" type="number" step="0.01" value="1500"></div>
+        <div><label>Comprobante ID</label><input id="comprobanteId" placeholder="Automatico"></div>
+      </div>
+      <button onclick="emitirComprobante()">Emitir comprobante</button>
+      <button class="secondary" onclick="registrarPagoFactura()">Registrar pago total</button>
+      <div class="cards">
+        <div class="card"><span>Comprobante</span><strong id="cardComprobante">-</strong></div>
+        <div class="card"><span>Estado</span><strong id="cardEstadoComp">-</strong></div>
+        <div class="card"><span>IGV</span><strong id="cardIgv">-</strong></div>
+        <div class="card"><span>Total</span><strong id="cardTotal">-</strong></div>
+      </div>
+    </section>
+
+    <section class="full">
       <h2>Resultado visible para la demo</h2>
       <div id="status" class="muted">Listo para iniciar.</div>
       <div class="cards">
@@ -140,6 +161,46 @@ async function consultarResumen() {
   const result = await api(`/cost-api/api/trip-costs/${id}/summary`);
   statusBox.textContent = 'Resumen consultado desde cost-service.';
   updateCards({ resumen: result.data });
+}
+function pintarComprobante(c) {
+  document.getElementById('comprobanteId').value = c.id;
+  document.getElementById('cardComprobante').textContent = `${c.serie}-${c.correlativo}`;
+  document.getElementById('cardEstadoComp').textContent = c.estado;
+  document.getElementById('cardIgv').textContent = money(c.igv);
+  document.getElementById('cardTotal').textContent = money(c.total);
+}
+async function emitirComprobante() {
+  try {
+    const importe = n('importeFactura');
+    const payload = {
+      tipo: v('tipoComprobante'),
+      clienteId: n('clienteId'),
+      clienteNombre: v('clienteNombre'),
+      moneda: 'PEN',
+      lineas: [{ descripcion: v('descripcionServicio'), cantidad: 1, precioUnitario: importe }]
+    };
+    setRequest('POST', '/api/billing/invoices', payload);
+    const result = await api('/billing-api/api/billing/invoices', { method: 'POST', body: JSON.stringify(payload) });
+    pintarComprobante(result.data);
+    statusBox.textContent = `Comprobante ${result.data.serie}-${result.data.correlativo} emitido y aceptado (SUNAT simulado).`;
+  } catch (e) {
+    statusBox.textContent = 'Error al emitir. Revisa que billing-service este levantado en el puerto 8087.';
+    requestBox.textContent += `\n\nERROR:\n${JSON.stringify(e, null, 2)}`;
+  }
+}
+async function registrarPagoFactura() {
+  const id = v('comprobanteId');
+  if (!id) return statusBox.textContent = 'Primero emite un comprobante.';
+  try {
+    const payload = { monto: n('importeFactura') * 1.18, medioPago: 'TRANSFERENCIA', fechaPago: new Date().toISOString().slice(0, 10) };
+    setRequest('POST', `/api/billing/invoices/${id}/payments`, payload);
+    const result = await api(`/billing-api/api/billing/invoices/${id}/payments`, { method: 'POST', body: JSON.stringify(payload) });
+    pintarComprobante(result.data);
+    statusBox.textContent = `Pago registrado. Saldo pendiente: ${money(result.data.saldoPendiente)}.`;
+  } catch (e) {
+    statusBox.textContent = 'Error al registrar el pago.';
+    requestBox.textContent += `\n\nERROR:\n${JSON.stringify(e, null, 2)}`;
+  }
 }
 </script>
 </body>

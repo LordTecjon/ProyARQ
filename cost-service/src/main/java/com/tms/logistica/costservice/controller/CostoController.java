@@ -1,15 +1,28 @@
 package com.tms.logistica.costservice.controller;
 
+import com.tms.logistica.costservice.model.dto.request.CalcularCostoRequest;
 import com.tms.logistica.costservice.model.dto.request.GastoRequest;
 import com.tms.logistica.costservice.model.dto.request.IngresoViajeRequest;
 import com.tms.logistica.costservice.model.dto.request.MontoCostoRequest;
 import com.tms.logistica.costservice.model.dto.response.ApiResponse;
-import com.tms.logistica.costservice.model.dto.response.*;
+import com.tms.logistica.costservice.model.dto.response.ComparacionCostoResponse;
+import com.tms.logistica.costservice.model.dto.response.CostoResponse;
+import com.tms.logistica.costservice.model.dto.response.GastoResponse;
+import com.tms.logistica.costservice.model.dto.response.MargenResponse;
+import com.tms.logistica.costservice.model.dto.response.ResumenCostoResponse;
 import com.tms.logistica.costservice.service.TripCostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/trip-costs")
@@ -20,6 +33,18 @@ public class CostoController {
     private static final String USUARIO_DEFAULT = "sistema";
 
     private final TripCostService tripCostService;
+
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<CostoResponse>>> listarCostos() {
+        return ResponseEntity.ok(ApiResponse.ok("costos encontrados", tripCostService.listarCostos()));
+    }
+    @PostMapping("/quote")
+    public ResponseEntity<ApiResponse<CostoResponse>> cotizar(
+            @Valid @RequestBody CalcularCostoRequest request,
+            @RequestHeader(value = HEADER_USUARIO, defaultValue = USUARIO_DEFAULT) String usuario) {
+        return ResponseEntity.ok(ApiResponse.ok("cotizacion calculada", tripCostService.cotizarCosto(request, usuario)));
+    }
 
     @PostMapping("/{orderId}/estimated")
     public ResponseEntity<ApiResponse<CostoResponse>> registrarEstimado(

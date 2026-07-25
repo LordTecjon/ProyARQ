@@ -3,204 +3,296 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Demo Order + Cost Service</title>
+  <title>TMS - Demo Modular</title>
   <style>
-    :root { font-family: Arial, sans-serif; color: #18202a; background: #f4f6f8; }
-    body { margin: 0; }
-    header { background: #10233f; color: white; padding: 18px 28px; }
-    h1 { margin: 0; font-size: 22px; }
-    main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px; }
-    section { background: white; border: 1px solid #d8dee6; border-radius: 8px; padding: 16px; }
-    h2 { margin: 0 0 12px; font-size: 17px; color: #10233f; }
-    label { display: block; font-size: 12px; font-weight: 700; margin: 10px 0 4px; color: #465568; }
-    input, select { width: 100%; box-sizing: border-box; padding: 9px; border: 1px solid #c8d0da; border-radius: 6px; font-size: 14px; }
-    button { margin-top: 12px; padding: 10px 12px; border: 0; border-radius: 6px; background: #1463ff; color: white; font-weight: 700; cursor: pointer; }
-    button.secondary { background: #44546a; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .banner { margin: 18px 18px 0; background: #fff7d6; border: 1px solid #e9ca6a; border-radius: 8px; padding: 12px; }
-    .full { grid-column: 1 / -1; }
-    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
-    .card { border: 1px solid #d8dee6; border-radius: 8px; padding: 12px; background: #f9fbfd; }
-    .card span { display:block; font-size: 12px; color:#65758a; font-weight:700; }
-    .card strong { display:block; margin-top: 6px; font-size: 18px; color:#10233f; }
-    details { margin-top: 14px; border: 1px solid #d8dee6; border-radius: 8px; padding: 10px; background:#fbfcfe; }
-    summary { cursor: pointer; font-weight: 700; color:#10233f; }
-    pre { background: #101820; color: #d8f3dc; padding: 12px; border-radius: 6px; overflow: auto; max-height: 220px; font-size: 12px; white-space: pre-wrap; }
-    .muted { color:#65758a; font-size:13px; }
-    @media (max-width: 900px) { main { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; } }
+    :root{--bg:#f3f6fa;--side:#111b2d;--side2:#18243a;--surface:#fff;--surface2:#f8fafc;--line:#d8e1eb;--text:#142033;--muted:#64748b;--brand:#5b2be0;--brand2:#2563eb;--green:#14804a;--amber:#a05a00;--red:#b42318;--soft-blue:#eaf2ff;--soft-green:#e8f7ef;--soft-amber:#fff4dd;--radius:8px;--shadow:0 10px 26px rgba(15,35,70,.08)}
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    .app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}.sidebar{background:var(--side);color:white;padding:16px 12px}.brand{display:flex;gap:10px;align-items:center;padding:6px 8px 18px}.logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#4263ff,#b832d8);display:grid;place-items:center;font-weight:900}.brand strong{display:block;font-size:14px}.brand span{display:block;font-size:12px;color:#aebbd0;margin-top:2px}.menu-title{color:#8290a8;font-size:11px;font-weight:800;margin:12px 10px 8px;text-transform:uppercase}.nav-btn{width:100%;border:0;background:transparent;color:#d6deeb;text-align:left;padding:11px 12px;border-radius:7px;font-weight:800;cursor:pointer}.nav-btn:hover{background:var(--side2)}.nav-btn.active{background:linear-gradient(90deg,#6c2fe5,#a832d8);color:white}.content{padding:0 18px 18px}.topbar{height:58px;display:flex;justify-content:space-between;align-items:center}.topbar h1{font-size:21px;margin:0;color:#172033}.topbar p{margin:3px 0 0;color:var(--muted);font-size:13px}.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+    button{border:0;border-radius:6px;min-height:38px;padding:10px 12px;background:var(--brand2);color:white;font-weight:800;cursor:pointer}button:hover{filter:brightness(.96)}button.secondary{background:#49576a}button.success{background:var(--green)}button.warning{background:var(--amber)}button.light{background:#eef3fb;color:#24364e;border:1px solid #ced9e7}.page{display:none}.page.active{display:grid;gap:14px}.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}.panel-title{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px}h2{margin:0;color:#172033;font-size:18px}.tag{font-size:12px;color:var(--muted);font-weight:800}.muted{color:var(--muted);font-size:13px;line-height:1.4}.layout{display:grid;grid-template-columns:minmax(440px,1.1fr) minmax(390px,.9fr);gap:14px;align-items:start}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field.full{grid-column:1/-1}label{display:block;color:#334155;font-size:12px;font-weight:800;margin-bottom:5px}input,select{width:100%;border:1px solid #c8d4e0;border-radius:6px;padding:10px;font-size:14px;background:white;color:var(--text);outline:none}input[readonly]{background:#f1f5f9;color:#334155}input:focus,select:focus{border-color:var(--brand2);box-shadow:0 0 0 3px rgba(37,99,235,.12)}.scenario-bar,.actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.actions{margin:14px 0 0}.scenario-bar button{background:#eef3fb;color:#24364e;border:1px solid #ced9e7}
+    .status{border:1px solid var(--line);background:var(--soft-blue);color:#123b62;border-radius:var(--radius);padding:11px 12px;font-size:13px;line-height:1.4;margin-bottom:12px}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}.kpi{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface2);padding:12px;min-height:82px}.kpi span{color:var(--muted);display:block;font-size:12px;font-weight:800}.kpi strong{display:block;margin-top:7px;color:#16233a;font-size:19px;word-break:break-word}.kpi.accent{background:var(--soft-green);border-color:#b7dfc6}.kpi.warn{background:var(--soft-amber);border-color:#efd08b}.breakdown{display:grid;gap:8px;margin-top:12px}.line-item{display:flex;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid var(--line);background:var(--surface2);border-radius:6px;font-size:13px}.line-item b{color:#172033}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--radius)}table{width:100%;border-collapse:collapse;background:white;font-size:13px}th,td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#f4f7fb;color:#43536a;font-size:12px;text-transform:uppercase}tr:last-child td{border-bottom:0}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;background:#edf2f7;color:#334155}.badge.ok{background:var(--soft-green);color:var(--green)}.badge.warn{background:var(--soft-amber);color:var(--amber)}.empty{padding:16px;color:var(--muted);font-size:13px}.order-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.hint{background:#f8fbff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-top:12px}.service-alert{display:none;border:1px solid #f1b7af;background:#fff0ee;color:#9f1d13;border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;font-weight:800}.service-alert.show{display:block}
+    @media(max-width:1080px){.app{grid-template-columns:1fr}.sidebar{position:static}.layout{grid-template-columns:1fr}.order-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.content{padding:0 12px 12px}.form-grid,.kpis,.order-summary{grid-template-columns:1fr}.topbar{height:auto;padding:12px 0;align-items:flex-start;gap:10px;flex-direction:column}}
   </style>
 </head>
 <body>
-  <header><h1>Demo TMS: Orden de transporte + costo automatico</h1></header>
-  <div class="banner">Los datos ya vienen precargados para exponer rapido, pero puedes editarlos. Al crear la orden, el frontend llama a <b>order-service</b>, calcula el costo estimado y lo registra en <b>cost-service</b>.</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">TMS</div><div><strong>Transporte</strong><span>Demo modular</span></div></div>
+    <div class="menu-title">Módulos</div>
+    <button id="tabOrden" class="nav-btn active" onclick="mostrarModulo('orden')">Módulo Orden</button>
+    <button id="tabCosto" class="nav-btn" onclick="mostrarModulo('costo')">Módulo Costo</button>
+    <button id="tabBilling" class="nav-btn" onclick="mostrarModulo('billing')">Modulo Facturacion</button>
+    <button id="tabResultado" class="nav-btn" onclick="mostrarModulo('resultado')">Resultado operativo</button>
+  </aside>
 
-  <main>
-    <section>
-      <h2>1. Datos de la orden</h2>
-      <div class="row"><div><label>Cliente ID</label><input id="clienteId" type="number" value="1"></div><div><label>Cliente</label><input id="clienteNombre" value="Transportes Demo SAC"></div></div>
-      <div class="row"><div><label>Tipo de servicio</label><select id="tipoServicio"><option>LOCAL</option><option>NACIONAL</option><option selected>EXPRESS</option><option>REFRIGERADO</option></select></div><div><label>Fecha recojo</label><input id="fechaRecojo" type="date"></div></div>
-      <label>Origen</label><input id="origenDireccion" value="Av. Javier Prado 123, Lima">
-      <div class="row"><div><label>Ubigeo origen</label><input id="origenUbigeo" value="150101"></div><div><label>Distancia KM</label><input id="distanciaKm" type="number" value="42.5" step="0.1"></div></div>
-      <label>Destino</label><input id="destinoDireccion" value="Av. La Marina 456, Callao">
-      <label>Ubigeo destino</label><input id="destinoUbigeo" value="070101">
-      <div class="row"><div><label>Vehiculo ID</label><input id="vehiculoId" type="number" value="1"></div><div><label>Conductor ID</label><input id="conductorId" type="number" value="1"></div></div>
-      <label>Detalle de carga</label><input id="descripcion" value="Cajas de mercaderia">
-      <div class="row"><div><label>Cantidad</label><input id="cantidad" type="number" value="10"></div><div><label>Peso kg</label><input id="pesoKg" type="number" value="180" step="0.1"></div></div>
-      <button onclick="crearOrden()">Crear orden y calcular costo</button>
-      <button class="secondary" onclick="listarOrdenes()">Listar ordenes</button>
+  <main class="content">
+    <div class="topbar">
+      <div><h1 id="pageTitle">Módulo Orden</h1><p id="pageSubtitle">Registro y consulta de órdenes de transporte.</p></div>
+      <div class="top-actions"><button class="light" onclick="cargarListados()">Actualizar listados</button><button class="light" onclick="limpiarDemo()">Nueva operación</button></div>
+    </div>
+
+    <section id="modOrden" class="page active">
+      <div class="layout">
+        <div class="panel">
+          <div class="panel-title"><h2>Nueva orden</h2><span class="tag">order-service</span></div>
+          <div class="scenario-bar"><button onclick="cargarEscenario('express')">Express urbano</button><button onclick="cargarEscenario('nacional')">Ruta nacional</button><button onclick="cargarEscenario('refrigerado')">Carga refrigerada</button></div>
+          <div class="form-grid">
+            <div class="field"><label>Cliente ID</label><input id="clienteId" type="number" value="1"></div><div class="field"><label>Cliente</label><input id="clienteNombre" value="Transportes Demo SAC"></div><div class="field full"><label>Correo de contacto</label><input id="correoContacto" type="email" value="tu-correo@gmail.com"></div>
+            <div class="field"><label>Tipo de servicio</label><select id="tipoServicio" onchange="actualizarProyeccion()"><option>LOCAL</option><option>NACIONAL</option><option selected>EXPRESS</option><option>REFRIGERADO</option></select></div><div class="field"><label>Fecha de recojo</label><input id="fechaRecojo" type="date"></div>
+            <div class="field full"><label>Origen</label><input id="origenDireccion" value="Av. Javier Prado 123, Lima"></div><div class="field"><label>Ubigeo origen</label><input id="origenUbigeo" value="150101"></div><div class="field"><label>Distancia KM</label><input id="distanciaKm" type="number" value="42.5" step="0.1" oninput="actualizarProyeccion()"></div>
+            <div class="field full"><label>Destino</label><input id="destinoDireccion" value="Av. La Marina 456, Callao"></div><div class="field"><label>Ubigeo destino</label><input id="destinoUbigeo" value="070101"></div><div class="field"><label>Vehículo ID</label><input id="vehiculoId" type="number" value="1"></div>
+            <div class="field"><label>Conductor ID</label><input id="conductorId" type="number" value="1"></div><div class="field full"><label>Detalle de carga</label><input id="descripcion" value="Cajas de mercadería"></div>
+            <div class="field"><label>Cantidad de bultos</label><input id="cantidad" type="number" value="10" oninput="actualizarProyeccion()"></div><div class="field"><label>Peso unitario KG</label><input id="pesoKg" type="number" value="18" step="0.1" oninput="actualizarProyeccion()"></div><div class="field"><label>Volumen unitario M3</label><input id="volumenM3" type="number" value="0.15" step="0.01" oninput="actualizarProyeccion()"></div>
+            <div class="field"><label>Peso total KG</label><input id="pesoTotal" readonly></div><div class="field"><label>Volumen total M3</label><input id="volumenTotal" readonly></div>
+          </div>
+          <div class="actions"><button onclick="cotizar()">Cotizar servicio</button><button class="success" onclick="crearOrden()">Crear orden</button></div>
+        </div>
+        <aside class="panel"><div class="panel-title"><h2>Resumen previo</h2><span class="tag">carga</span></div><div class="kpis"><div class="kpi"><span>Peso total</span><strong id="kpiPesoTotal">-</strong></div><div class="kpi"><span>Volumen total</span><strong id="kpiVolumenTotal">-</strong></div><div class="kpi"><span>Distancia</span><strong id="kpiDistancia">-</strong></div></div><div class="hint muted">La orden guarda datos de cliente, ruta, asignación y detalle de carga. La cotización se asocia luego por ID de orden.</div></aside>
+      </div>
+      <div class="panel"><div class="panel-title"><h2>Listado de órdenes</h2><span class="tag">orden + cotización asociada</span></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Código OT</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Cotización asignada</th><th>Monto a cobrar</th></tr></thead><tbody id="ordersTable"><tr><td colspan="7"><div class="empty">Sin datos cargados.</div></td></tr></tbody></table></div></div>
     </section>
 
-    <section>
-      <h2>2. Costo asociado</h2>
-      <div class="row"><div><label>Orden ID</label><input id="ordenId" type="number" placeholder="Automatico"></div><div><label>Codigo OT</label><input id="codigoOrden" placeholder="Automatico"></div></div>
-      <div class="row"><div><label>Costo estimado automatico</label><input id="costoEstimado" type="number" step="0.01"></div><div><label>Ingreso para margen</label><input id="ingreso" type="number" value="1500" step="0.01"></div></div>
-      <p class="muted">Formula usada: tarifa base 150 + distancia * 4 + peso * 0.8 + recargo por tipo de servicio.</p>
-      <button onclick="registrarIngreso()">Registrar ingreso y margen</button>
-      <button class="secondary" onclick="consultarResumen()">Consultar resumen</button>
+    <section id="modCosto" class="page">
+      <div class="layout">
+        <div class="panel"><div class="panel-title"><h2>Cotización de servicio</h2><span class="tag">cost-service</span></div><div id="serviceAlert" class="service-alert">Modulo Costo no disponible por el momento. Puedes crear la orden sin cotizacion asignada.</div><div id="status" class="status">Presiona Cotizar servicio para calcular costo operativo, monto al cliente y margen.</div><div class="kpis"><div class="kpi"><span>Costo operativo interno</span><strong id="cardCosto">-</strong></div><div class="kpi accent"><span>Monto a cobrar al cliente</span><strong id="cardIngreso">-</strong></div><div class="kpi warn"><span>Margen proyectado</span><strong id="cardMargen">-</strong></div></div><div class="form-grid"><div class="field"><label>Orden ID</label><input id="ordenId" readonly></div><div class="field"><label>Código de orden</label><input id="codigoOrden" readonly></div><div class="field"><label>Costo calculado</label><input id="costoCotizado" readonly></div><div class="field"><label>Monto a cobrar sugerido</label><input id="ingreso" readonly></div></div><div class="actions"><button onclick="cotizar()">Recalcular cotización</button><button class="secondary" onclick="consultarResumen()">Consultar costo asociado</button><button class="warning" onclick="registrarIngreso()">Registrar monto y margen</button></div></div>
+        <aside class="panel"><div class="panel-title"><h2>Composición del monto</h2><span class="tag">desglose</span></div><p class="muted">El costo operativo viene del servicio de costos. El monto a cobrar agrega margen comercial y ajustes por manipulación de carga.</p><div class="breakdown"><div class="line-item"><span>Tarifa fija de atención</span><b id="brBase">-</b></div><div class="line-item"><span>Ruta / distancia</span><b id="brDistancia">-</b></div><div class="line-item"><span>Carga / peso total</span><b id="brPeso">-</b></div><div class="line-item"><span>Recargo por servicio</span><b id="brRecargo">-</b></div><div class="line-item"><span>IGV del costo operativo</span><b id="brIgv">-</b></div><div class="line-item"><span>Ajuste comercial por cantidad y volumen</span><b id="brComercial">-</b></div></div></aside>
+      </div>
+      <div class="panel"><div class="panel-title"><h2>Listado de cotizaciones</h2><span class="tag">por orden registrada</span></div><div class="table-wrap"><table><thead><tr><th>Orden ID</th><th>Código OT</th><th>Costo operativo</th><th>Monto a cobrar</th><th>Margen</th><th>Estado</th></tr></thead><tbody id="costsTable"><tr><td colspan="6"><div class="empty">Sin cotizaciones cargadas.</div></td></tr></tbody></table></div></div>
     </section>
 
-    <section class="full">
-      <h2>3. Facturacion (billing-service)</h2>
-      <p class="muted">Emite el comprobante electronico de la orden. Toma el cliente de la seccion 1 y el importe del ingreso (seccion 2). El servicio calcula el IGV (18%), genera serie/correlativo y simula el envio a SUNAT.</p>
-      <div class="row">
-        <div><label>Tipo de comprobante</label><select id="tipoComprobante"><option value="FACTURA">FACTURA</option><option value="BOLETA">BOLETA</option></select></div>
-        <div><label>Descripcion del servicio</label><input id="descripcionServicio" value="Servicio de transporte de carga"></div>
-      </div>
-      <div class="row">
-        <div><label>Importe sin IGV (S/)</label><input id="importeFactura" type="number" step="0.01" value="1500"></div>
-        <div><label>Comprobante ID</label><input id="comprobanteId" placeholder="Automatico"></div>
-      </div>
-      <button onclick="emitirComprobante()">Emitir comprobante</button>
-      <button class="secondary" onclick="registrarPagoFactura()">Registrar pago total</button>
-      <div class="cards">
-        <div class="card"><span>Comprobante</span><strong id="cardComprobante">-</strong></div>
-        <div class="card"><span>Estado</span><strong id="cardEstadoComp">-</strong></div>
-        <div class="card"><span>IGV</span><strong id="cardIgv">-</strong></div>
-        <div class="card"><span>Total</span><strong id="cardTotal">-</strong></div>
-      </div>
-    </section>
 
-    <section class="full">
-      <h2>Resultado visible para la demo</h2>
-      <div id="status" class="muted">Listo para iniciar.</div>
-      <div class="cards">
-        <div class="card"><span>Orden</span><strong id="cardOrden">-</strong></div>
-        <div class="card"><span>Estado</span><strong id="cardEstado">-</strong></div>
-        <div class="card"><span>Costo estimado</span><strong id="cardCosto">-</strong></div>
-        <div class="card"><span>Margen</span><strong id="cardMargen">-</strong></div>
+    <section id="modBilling" class="page">
+      <div class="layout">
+        <div class="panel">
+          <div class="panel-title"><h2>Emision de comprobante</h2><span class="tag">billing-service</span></div>
+          <div id="billingStatus" class="status">Emite una factura usando la orden y el monto a cobrar.</div>
+          <div class="form-grid">
+            <div class="field"><label>Codigo OT a facturar</label><input id="billingOtId" placeholder="ORD-2026-000009" oninput="buscarOrdenParaFacturarDebounced()"></div>
+            <div class="field"><label>Cliente</label><input id="billingCliente" readonly></div>
+            <div class="field"><label>Tipo comprobante</label><select id="billingTipo"><option>FACTURA</option><option>BOLETA</option></select></div>
+            <div class="field"><label>Moneda</label><select id="billingMoneda"><option>PEN</option><option>USD</option></select></div>
+            <div class="field"><label>Monto a facturar</label><input id="billingMonto" readonly></div>
+            <div class="field"><label>Pago recibido</label><input id="billingPago" type="number" step="0.01" readonly></div>
+          </div>
+          <div class="actions"><button class="success" onclick="facturarYPagar()">Registrar pago y emitir comprobante</button><button class="secondary" onclick="cargarFacturas()">Actualizar facturas</button></div>
+        </div>
+        <aside class="panel"><div class="panel-title"><h2>Comprobante emitido</h2><span class="tag">SUNAT simulado</span></div><div class="kpis"><div class="kpi"><span>Factura ID</span><strong id="billingId">-</strong></div><div class="kpi accent"><span>Total</span><strong id="billingTotal">-</strong></div><div class="kpi warn"><span>Saldo</span><strong id="billingSaldo">-</strong></div></div><div class="kpis"><div class="kpi"><span>Estado de orden</span><strong id="billingOrdenEstado">PENDIENTE</strong></div><div class="kpi"><span>Accion tras pago</span><strong id="billingAccion">-</strong></div><div class="kpi"><span>Comprobante</span><strong id="billingEstadoComprobante">-</strong></div></div><div class="hint muted">Billing genera el comprobante, calcula IGV, simula envio SUNAT/CDR y permite registrar pagos.</div></aside>
       </div>
-      <details>
-        <summary>Ver request enviado al endpoint</summary>
-        <pre id="requestBox">Todavia no se envio ningun request.</pre>
-      </details>
+      <div class="panel"><div class="panel-title"><h2>Listado de comprobantes</h2><span class="tag">facturacion</span></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Serie</th><th>Cliente</th><th>OT</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead><tbody id="billingTable"><tr><td colspan="8"><div class="empty">Sin comprobantes cargados.</div></td></tr></tbody></table></div></div>
+    </section>
+    <section id="modResultado" class="page">
+      <div class="panel"><div class="panel-title"><h2>Resultado de la operación</h2><span class="tag">orden persistida + costo asociado</span></div><div class="order-summary"><div class="kpi"><span>Código OT</span><strong id="cardOrden">-</strong></div><div class="kpi"><span>Cliente</span><strong id="cardCliente">-</strong></div><div class="kpi"><span>Servicio</span><strong id="cardServicio">-</strong></div><div class="kpi"><span>Estado</span><strong id="cardEstado">-</strong></div></div><div class="actions"><button class="secondary" onclick="mostrarModulo('orden')">Volver a Orden</button><button class="secondary" onclick="mostrarModulo('costo')">Ver Costos</button><button class="secondary" onclick="limpiarDemo()">Nueva operación</button></div></div>
     </section>
   </main>
+</div>
 
 <script>
-const statusBox = document.getElementById('status');
-const requestBox = document.getElementById('requestBox');
-document.getElementById('fechaRecojo').value = new Date().toISOString().slice(0, 10);
-function n(id) { return Number(document.getElementById(id).value); }
-function v(id) { return document.getElementById(id).value; }
-function money(value) { return value == null ? '-' : `S/ ${Number(value).toFixed(2)}`; }
-function setRequest(method, url, payload) { requestBox.textContent = `${method} ${url}\n\n${payload ? JSON.stringify(payload, null, 2) : '(sin body)'}`; }
-function updateCards({ orden, costo, resumen, margen }) {
-  if (orden) { document.getElementById('cardOrden').textContent = orden.codigoOrden || orden.id || '-'; document.getElementById('cardEstado').textContent = orden.estado || '-'; }
-  if (costo) document.getElementById('cardCosto').textContent = money(costo.total || costo.costoEstimado);
-  if (resumen) document.getElementById('cardCosto').textContent = money(resumen.costoEstimado);
-  if (margen) document.getElementById('cardMargen').textContent = money(margen.margen);
-}
-async function api(url, options = {}) {
-  const res = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', 'X-Usuario': 'demo-profesor', ...(options.headers || {}) } });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw body;
-  return body;
-}
-function calcularCostoEstimado(orden) {
-  const distancia = Number(orden.distanciaKm || 0), peso = Number(orden.pesoTotalKg || 0);
-  const recargoServicio = ({ LOCAL: 0, NACIONAL: 120, EXPRESS: 200, REFRIGERADO: 300 })[orden.tipoServicio] || 0;
-  const total = 150 + distancia * 4 + peso * 0.8 + recargoServicio;
-  return { total: Number(total.toFixed(2)), formula: `150 + (${distancia} * 4) + (${peso} * 0.8) + ${recargoServicio}` };
-}
-async function crearOrden() {
-  try {
-    const payload = { clienteId:n('clienteId'), clienteNombre:v('clienteNombre'), tipoServicio:v('tipoServicio'), origenDireccion:v('origenDireccion'), origenUbigeo:v('origenUbigeo'), destinoDireccion:v('destinoDireccion'), destinoUbigeo:v('destinoUbigeo'), fechaRecojo:v('fechaRecojo'), distanciaKm:n('distanciaKm'), vehiculoId:n('vehiculoId'), conductorId:n('conductorId'), observaciones:'Orden creada desde frontend-demo', detalles:[{ descripcion:v('descripcion'), cantidad:n('cantidad'), pesoKg:n('pesoKg'), volumenM3:1.5 }] };
-    setRequest('POST', '/api/orders', payload);
-    const orderResult = await api('/order-api/api/orders', { method:'POST', body:JSON.stringify(payload) });
-    const orden = orderResult.data;
-    document.getElementById('ordenId').value = orden.id;
-    document.getElementById('codigoOrden').value = orden.codigoOrden;
-    const calculo = calcularCostoEstimado(orden);
-    document.getElementById('costoEstimado').value = calculo.total;
-    const costoPayload = { monto: calculo.total, observaciones: `Costo estimado automatico. Formula: ${calculo.formula}` };
-    setRequest('POST', `/api/trip-costs/${orden.id}/estimated`, costoPayload);
-    await api(`/cost-api/api/trip-costs/${orden.id}/estimated`, { method:'POST', body:JSON.stringify(costoPayload) });
-    const resumenResult = await api(`/cost-api/api/trip-costs/${orden.id}/summary`);
-    statusBox.textContent = 'Orden creada y costo estimado registrado en cost-service.';
-    updateCards({ orden, costo: calculo, resumen: resumenResult.data });
-  } catch (e) { statusBox.textContent = 'Error en el flujo. Revisa que order-service y cost-service esten levantados.'; requestBox.textContent += `\n\nERROR:\n${JSON.stringify(e, null, 2)}`; }
-}
-async function listarOrdenes() {
-  setRequest('GET', '/api/orders');
-  const result = await api('/order-api/api/orders');
-  statusBox.textContent = `Ordenes encontradas: ${(result.data || []).length}`;
-}
-async function registrarIngreso() {
-  const id = n('ordenId');
-  if (!id) return statusBox.textContent = 'Primero crea una orden.';
-  const payload = { ingreso: n('ingreso') };
-  setRequest('POST', `/api/trip-costs/${id}/income`, payload);
-  const result = await api(`/cost-api/api/trip-costs/${id}/income`, { method:'POST', body:JSON.stringify(payload) });
-  statusBox.textContent = 'Ingreso registrado y margen calculado.';
-  updateCards({ margen: result.data });
-}
-async function consultarResumen() {
-  const id = n('ordenId');
-  if (!id) return statusBox.textContent = 'Primero crea una orden.';
-  setRequest('GET', `/api/trip-costs/${id}/summary`);
-  const result = await api(`/cost-api/api/trip-costs/${id}/summary`);
-  statusBox.textContent = 'Resumen consultado desde cost-service.';
-  updateCards({ resumen: result.data });
-}
-function pintarComprobante(c) {
-  document.getElementById('comprobanteId').value = c.id;
-  document.getElementById('cardComprobante').textContent = `${c.serie}-${c.correlativo}`;
-  document.getElementById('cardEstadoComp').textContent = c.estado;
-  document.getElementById('cardIgv').textContent = money(c.igv);
-  document.getElementById('cardTotal').textContent = money(c.total);
-}
-async function emitirComprobante() {
-  try {
-    const importe = n('importeFactura');
-    const payload = {
-      tipo: v('tipoComprobante'),
-      clienteId: n('clienteId'),
-      clienteNombre: v('clienteNombre'),
-      moneda: 'PEN',
-      lineas: [{ descripcion: v('descripcionServicio'), cantidad: 1, precioUnitario: importe }]
-    };
-    setRequest('POST', '/api/billing/invoices', payload);
-    const result = await api('/billing-api/api/billing/invoices', { method: 'POST', body: JSON.stringify(payload) });
-    pintarComprobante(result.data);
-    statusBox.textContent = `Comprobante ${result.data.serie}-${result.data.correlativo} emitido y aceptado (SUNAT simulado).`;
-  } catch (e) {
-    statusBox.textContent = 'Error al emitir. Revisa que billing-service este levantado en el puerto 8087.';
-    requestBox.textContent += `\n\nERROR:\n${JSON.stringify(e, null, 2)}`;
+const API='http://localhost:8090';let ultimaCotizacion=null;let ultimaProyeccion=null;let ordenesCache=[];let costosCache=new Map();
+const $=id=>document.getElementById(id);const n=id=>Number($(id).value||0);const v=id=>$(id).value;const money=value=>value==null||value===''||Number.isNaN(Number(value))?'-':`S/ ${Number(value).toFixed(2)}`;
+$('fechaRecojo').value=new Date().toISOString().slice(0,10);actualizarProyeccion();cargarListados();
+function mostrarModulo(modulo){const meta={orden:['Módulo Orden','Registro y consulta de órdenes de transporte.'],costo:['Módulo Costo','Cotización, costos asociados y margen operativo.'],billing:['Modulo Facturacion','Emision de comprobantes, pagos y cuentas por cobrar.'],resultado:['Resultado operativo','Resumen final de la operación registrada.']};['orden','costo','billing','resultado'].forEach(m=>{ $('mod'+cap(m)).classList.toggle('active',m===modulo); $('tab'+cap(m)).classList.toggle('active',m===modulo); });$('pageTitle').textContent=meta[modulo][0];$('pageSubtitle').textContent=meta[modulo][1];}
+function cap(text){return text.charAt(0).toUpperCase()+text.slice(1)}function mostrarCostServiceDown(){ultimaCotizacion=null;ultimaProyeccion=null;$('serviceAlert').classList.add('show');$('cardCosto').textContent='No disponible';$('cardIngreso').textContent='No calculado';$('cardMargen').textContent='No calculado';$('costoCotizado').value='';$('ingreso').value='';['brBase','brDistancia','brPeso','brRecargo','brIgv','brComercial'].forEach(id=>$(id).textContent='-');setStatus('Cost-service no esta habilitado por el momento. La orden puede registrarse sin cotizacion.','warn');}function ocultarCostServiceDown(){if($('serviceAlert'))$('serviceAlert').classList.remove('show');}function setStatus(message,type='info'){const colors={info:'#e8f2ff',ok:'#e8f7ef',warn:'#fff4dd',bad:'#fff0ee'};$('status').style.background=colors[type]||colors.info;$('status').textContent=message;}
+async function api(url,options={}){const response=await fetch(API+url,{...options,headers:{'Content-Type':'application/json','X-Usuario':'demo-profesor',...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw body;return body;}
+async function cargarListados(){try{const res=await api('/api/orders');ordenesCache=res.data||[];costosCache=new Map();await Promise.all(ordenesCache.map(async o=>{const id=o.id;try{const s=await api(`/api/trip-costs/${id}/summary`);costosCache.set(id,s.data);}catch(e){costosCache.set(id,null);}}));renderOrdenes();renderCostos();}catch(e){renderOrdenes([]);renderCostos([]);}}
+function renderOrdenes(){if(!ordenesCache.length){$('ordersTable').innerHTML='<tr><td colspan="7"><div class="empty">No hay órdenes registradas todavía.</div></td></tr>';return;}$('ordersTable').innerHTML=ordenesCache.map(o=>{const c=costosCache.get(o.id);const montoCliente=Number(c?.ingreso||c?.ingresoViaje||0);return `<tr><td>${o.id||'-'}</td><td>${o.codigoOrden||'-'}</td><td>${o.clienteNombre||'-'}</td><td>${o.tipoServicio||'-'}</td><td><span class="badge">${o.estado||'-'}</span></td><td>${montoCliente?`<span class="badge ok">${money(montoCliente)}</span>`:'<span class="badge">Sin cotizacion</span>'}</td><td>${montoCliente?money(montoCliente):'-'}</td></tr>`}).join('');}function renderCostos(){const rows=ordenesCache.map(o=>({orden:o,costo:costosCache.get(o.id)})).filter(x=>x.costo);if(!rows.length){$('costsTable').innerHTML='<tr><td colspan="6"><div class="empty">No hay cotizaciones asociadas a órdenes todavía.</div></td></tr>';return;}$('costsTable').innerHTML=rows.map(({orden,costo})=>{const costoBase=Number(costo.costoEstimado||costo.total||0);const ingreso=Number(costo.ingreso||costo.ingresoViaje||0);const margen=ingreso?round2(ingreso-costoBase):Number(costo.margen||0);return `<tr><td>${orden.id}</td><td>${orden.codigoOrden||'-'}</td><td>${money(costoBase)}</td><td>${ingreso?money(ingreso):'-'}</td><td>${ingreso?money(margen):'-'}</td><td><span class="badge ok">Asignada</span></td></tr>`}).join('');}function cargarEscenario(tipo){const escenarios={express:{tipoServicio:'EXPRESS',distanciaKm:42.5,pesoKg:18,cantidad:10,volumenM3:.15,clienteNombre:'Transportes Demo SAC',correoContacto:'tu-correo@gmail.com',origenDireccion:'Av. Javier Prado 123, Lima',destinoDireccion:'Av. La Marina 456, Callao',descripcion:'Cajas de mercadería'},nacional:{tipoServicio:'NACIONAL',distanciaKm:385,pesoKg:34,cantidad:28,volumenM3:.29,clienteNombre:'Agro Norte SAC',correoContacto:'tu-correo@gmail.com',origenDireccion:'Ate, Lima',destinoDireccion:'Trujillo, La Libertad',descripcion:'Insumos agroindustriales'},refrigerado:{tipoServicio:'REFRIGERADO',distanciaKm:76,pesoKg:32.5,cantidad:16,volumenM3:.25,clienteNombre:'Clínica Salud Total',origenDireccion:'Lince, Lima',destinoDireccion:'Chorrillos, Lima',descripcion:'Carga refrigerada sensible'}};Object.entries(escenarios[tipo]).forEach(([k,val])=>{if($(k))$(k).value=val});ultimaCotizacion=null;limpiarCotizacion(false);actualizarProyeccion();}
+function totalesCarga(){const cantidad=n('cantidad');return{cantidad,pesoTotal:n('pesoKg')*cantidad,volumenTotal:n('volumenM3')*cantidad};}
+function actualizarProyeccion(){const{pesoTotal,volumenTotal}=totalesCarga();if($('pesoTotal'))$('pesoTotal').value=pesoTotal.toFixed(2);if($('volumenTotal'))$('volumenTotal').value=volumenTotal.toFixed(2);if($('kpiPesoTotal'))$('kpiPesoTotal').textContent=`${pesoTotal.toFixed(2)} kg`;if($('kpiVolumenTotal'))$('kpiVolumenTotal').textContent=`${volumenTotal.toFixed(2)} m3`;if($('kpiDistancia'))$('kpiDistancia').textContent=`${n('distanciaKm').toFixed(1)} km`;if(ultimaCotizacion)calcularPrecioCliente(ultimaCotizacion);}
+function calcularPrecioCliente(costo){const{cantidad,volumenTotal}=totalesCarga();const costoOperativo=Number(costo.total||0);const factorVolumen=volumenTotal*12;const factorManipulacion=cantidad*1.75;const margenComercial=costoOperativo*.28;const montoCobrar=round2(costoOperativo+margenComercial+factorVolumen+factorManipulacion);const margen=round2(montoCobrar-costoOperativo);ultimaProyeccion={costoOperativo,montoCobrar,margen};$('ingreso').value=montoCobrar.toFixed(2);$('cardIngreso').textContent=money(montoCobrar);$('cardMargen').textContent=money(margen);$('brComercial').textContent=money(factorVolumen+factorManipulacion+margenComercial);return ultimaProyeccion;}
+function round2(value){return Math.round(Number(value)*100)/100}function quotePayload(){const{pesoTotal}=totalesCarga();return{tipoServicio:v('tipoServicio'),distanciaKm:n('distanciaKm'),pesoKg:round2(pesoTotal),observaciones:`Cotización con ${n('cantidad')} bultos y ${$('volumenTotal').value} m3 total`};}
+function orderPayload(){return{clienteId:n('clienteId'),clienteNombre:v('clienteNombre'),correoContacto:v('correoContacto'),tipoServicio:v('tipoServicio'),origenDireccion:v('origenDireccion'),origenUbigeo:v('origenUbigeo'),destinoDireccion:v('destinoDireccion'),destinoUbigeo:v('destinoUbigeo'),fechaRecojo:v('fechaRecojo'),distanciaKm:n('distanciaKm'),vehiculoId:n('vehiculoId'),conductorId:n('conductorId'),observaciones:'Orden creada con cotización previa desde frontend demo',detalles:[{descripcion:v('descripcion'),cantidad:n('cantidad'),pesoKg:n('pesoKg'),volumenM3:n('volumenM3')}]};}
+async function cotizar(){
+  try{
+    ocultarCostServiceDown();
+    actualizarProyeccion();
+    mostrarModulo('costo');
+    setStatus('Calculando costo operativo en cost-service...','info');
+    const response=await api('/api/trip-costs/quote',{method:'POST',body:JSON.stringify(quotePayload())});
+    ultimaCotizacion=response.data;
+    const proyeccion=calcularPrecioCliente(ultimaCotizacion);
+    $('costoCotizado').value=ultimaCotizacion.total;
+    $('cardCosto').textContent=money(ultimaCotizacion.total);
+    $('brBase').textContent=money(ultimaCotizacion.tarifaBase);
+    $('brDistancia').textContent=money(ultimaCotizacion.costoDistancia);
+    $('brPeso').textContent=money(ultimaCotizacion.costoPeso);
+    $('brRecargo').textContent=money(ultimaCotizacion.recargoServicio);
+    $('brIgv').textContent=money(ultimaCotizacion.igv);
+    setStatus('Cotizacion lista: costo interno '+money(ultimaCotizacion.total)+' y monto a cobrar '+money(proyeccion.montoCobrar)+'.','ok');
+    return ultimaCotizacion;
+  }catch(error){
+    mostrarModulo('costo');
+    mostrarCostServiceDown();
+    throw error;
   }
 }
-async function registrarPagoFactura() {
-  const id = v('comprobanteId');
-  if (!id) return statusBox.textContent = 'Primero emite un comprobante.';
-  try {
-    const payload = { monto: n('importeFactura') * 1.18, medioPago: 'TRANSFERENCIA', fechaPago: new Date().toISOString().slice(0, 10) };
-    setRequest('POST', `/api/billing/invoices/${id}/payments`, payload);
-    const result = await api(`/billing-api/api/billing/invoices/${id}/payments`, { method: 'POST', body: JSON.stringify(payload) });
-    pintarComprobante(result.data);
-    statusBox.textContent = `Pago registrado. Saldo pendiente: ${money(result.data.saldoPendiente)}.`;
-  } catch (e) {
-    statusBox.textContent = 'Error al registrar el pago.';
-    requestBox.textContent += `\n\nERROR:\n${JSON.stringify(e, null, 2)}`;
+
+async function crearOrden(){
+  try{
+    let costoDisponible=true;
+    if(!ultimaCotizacion){
+      try{ await cotizar(); }catch(e){ costoDisponible=false; }
+    }
+    setStatus('Creando orden en order-service...','info');
+    const orderResponse=await api('/api/orders',{method:'POST',body:JSON.stringify(orderPayload())});
+    const orden=orderResponse.data;
+    $('ordenId').value=orden.id;
+    $('codigoOrden').value=orden.codigoOrden;
+    $('cardOrden').textContent=orden.codigoOrden;
+    $('cardCliente').textContent=orden.clienteNombre||v('clienteNombre');
+    $('cardServicio').textContent=orden.tipoServicio||v('tipoServicio');
+    $('cardEstado').textContent=orden.estado||'REGISTRADA';
+    if(ultimaCotizacion){
+      try{
+        await api('/api/trip-costs/'+orden.id+'/estimated',{
+          method:'POST',
+          body:JSON.stringify({monto:ultimaCotizacion.total,observaciones:'Costo operativo asociado a '+orden.codigoOrden})
+        });
+        await registrarIngreso(true);
+      }catch(e){
+        costoDisponible=false;
+        mostrarCostServiceDown();
+      }
+    }
+    await cargarListados();
+    mostrarModulo('resultado');
+    if(costoDisponible){
+      setStatus('Orden creada, costo asociado y correo enviado si SMTP esta configurado.','ok');
+    }else{
+      setStatus('Orden creada correctamente. Cost-service no esta habilitado, sin cotizacion asignada.','warn');
+    }
+  }catch(error){
+    mostrarModulo('orden');
+    setStatus('No se pudo crear la orden. Revisa order-service y gateway.','bad');
   }
+}
+
+async function consultarResumen(){
+  const id=$('ordenId').value;
+  if(!id)return setStatus('Primero crea una orden para consultar el costo asociado.','warn');
+  try{
+    const response=await api('/api/trip-costs/'+id+'/summary');
+    $('cardCosto').textContent=money(response.data.costoEstimado);
+    setStatus('Costo asociado consultado desde cost-service.','ok');
+    await cargarListados();
+  }catch(error){
+    setStatus('No se pudo consultar el costo asociado.','bad');
+  }
+}
+async function registrarIngreso(silent=false){const id=$('ordenId').value;if(!id){if(!silent)setStatus('Primero crea una orden para registrar el monto a cobrar.','warn');return;}try{if(!ultimaProyeccion)calcularPrecioCliente(ultimaCotizacion);const payload={ingreso:Number($('ingreso').value)};const response=await api(`/api/trip-costs/${id}/income`,{method:'POST',body:JSON.stringify(payload)});$('cardIngreso').textContent=money(payload.ingreso);$('cardMargen').textContent=money(response.data.margen);if(!silent)setStatus('Monto a cobrar registrado y margen calculado en cost-service.','ok');await cargarListados();}catch(error){if(!silent)setStatus('No se pudo registrar monto/margen.','bad');}}
+function limpiarCotizacion(resetOrden=true){ultimaCotizacion=null;ultimaProyeccion=null;['costoCotizado','ingreso'].forEach(id=>$(id).value='');['cardCosto','cardIngreso','cardMargen','brBase','brDistancia','brPeso','brRecargo','brIgv','brComercial'].forEach(id=>$(id).textContent='-');if(resetOrden)['ordenId','codigoOrden'].forEach(id=>$(id).value='');}
+function limpiarDemo(){limpiarCotizacion(true);['cardOrden','cardCliente','cardServicio','cardEstado'].forEach(id=>$(id).textContent='-');mostrarModulo('orden');actualizarProyeccion();}
+
+let billingLookupTimer=null;
+function buscarOrdenParaFacturarDebounced(){clearTimeout(billingLookupTimer);billingLookupTimer=setTimeout(buscarOrdenParaFacturar,450);}
+async function buscarOrdenParaFacturar(){
+  const codigo=$('billingOtId').value.trim();
+  if(!codigo){return;}
+  try{
+    const ordenRes=await api('/api/orders/'+codigo);
+    const orden=ordenRes.data;
+    $('ordenId').value=orden.id;
+    $('codigoOrden').value=orden.codigoOrden;
+    $('billingCliente').value=orden.clienteNombre||'';
+    if($('billingOrdenEstado')) $('billingOrdenEstado').textContent=orden.estado||'-';
+    const costoRes=await api('/api/trip-costs/'+orden.id+'/summary');
+    const costo=costoRes.data;
+    const monto=Number(costo.ingreso||costo.ingresoViaje||0);
+    if(!monto){
+      $('billingMonto').value='';
+      $('billingPago').value='';
+      return setBillingStatus('Orden encontrada, pero aun no tiene monto a cobrar cotizado.','warn');
+    }
+    $('billingMonto').value=monto.toFixed(2);
+    $('billingPago').value=monto.toFixed(2);
+    setBillingStatus('Orden '+codigo+' cargada con monto cotizado desde cost-service.','ok');
+  }catch(e){
+    $('billingCliente').value='';$('billingMonto').value='';$('billingPago').value='';
+    setBillingStatus('No se encontro la orden o no tiene cotizacion asociada.','bad');
+  }
+}
+function syncBillingFields(){
+  if($('billingOtId') && !$('billingOtId').value) $('billingOtId').value=$('codigoOrden').value||'';
+  if($('billingCliente')) $('billingCliente').value=v('clienteNombre');
+  if($('billingMonto')) $('billingMonto').value=$('ingreso').value||'';
+  if($('billingPago')) $('billingPago').value=$('ingreso').value||'';
+}async function facturarYPagar(){
+  setBillingStatus('Procesando comprobante y pago total de la orden...','info');
+  await emitirComprobante();
+  if($('billingId').textContent && $('billingId').textContent!=='-'){
+    await registrarPagoBilling();
+  }
+}
+async function emitirComprobante(){
+  try{
+    syncBillingFields();
+    const codigo=$('billingOtId').value.trim();
+    if(!codigo) return setBillingStatus('Ingresa o crea una orden para facturar.','warn');
+    const ordenRes=await api('/api/orders/'+codigo);
+    const orden=ordenRes.data;
+    $('ordenId').value=orden.id;
+    $('codigoOrden').value=orden.codigoOrden;
+    $('billingCliente').value=orden.clienteNombre||v('clienteNombre');
+    const costoRes=await api('/api/trip-costs/'+orden.id+'/summary');
+    const costo=costoRes.data;
+    const monto=Number(costo.ingreso||costo.ingresoViaje||$('ingreso').value||0);
+    if(!monto) return setBillingStatus('La orden '+codigo+' aun no tiene monto cotizado para facturar.','warn');
+    $('billingMonto').value=monto.toFixed(2);
+    $('billingPago').value=monto.toFixed(2);
+    const payload={tipo:v('billingTipo'),clienteId:Number(orden.clienteId||n('clienteId')),clienteNombre:orden.clienteNombre||v('clienteNombre'),otId:Number(orden.id),moneda:v('billingMoneda'),tipoCambio:1,fechaVencimiento:new Date(Date.now()+7*86400000).toISOString().slice(0,10),lineas:[{descripcion:'Servicio de transporte '+orden.codigoOrden,cantidad:1,precioUnitario:monto,otId:Number(orden.id)}]};
+    const res=await api('/api/billing/invoices',{method:'POST',body:JSON.stringify(payload)});
+    const c=res.data;
+    $('billingId').textContent=c.id;
+    $('billingTotal').textContent=money(c.total);
+    $('billingSaldo').textContent=money(c.saldoPendiente);
+    if($('billingEstadoComprobante')) $('billingEstadoComprobante').textContent=c.estado||'-';
+    setBillingStatus('Comprobante emitido para '+orden.codigoOrden+'. Ahora se registrara el pago total.','ok');
+    await cargarFacturas();
+  }catch(e){setBillingStatus('No se pudo emitir. Verifica que la OT exista y tenga cotizacion asociada.','bad');}
+}
+async function registrarPagoBilling(){
+  try{
+    const id=$('billingId').textContent;
+    if(!id || id==='-') return setBillingStatus('Primero emite un comprobante.','warn');
+    const montoPago=Number($('billingPago').value||0);
+    const totalFactura=Number($('billingTotal').textContent.replace('S/','').trim()||$('billingMonto').value||0);$('billingPago').value=totalFactura.toFixed(2);const payload={monto:totalFactura,medioPago:'TRANSFERENCIA',fechaPago:new Date().toISOString().slice(0,10),numeroOperacion:'OP-'+Date.now()};
+    const res=await api('/api/billing/invoices/'+id+'/payments',{method:'POST',body:JSON.stringify(payload)});
+    const saldo=Number(res.data.saldoPendiente||0);
+    $('billingSaldo').textContent=money(saldo);
+    if($('billingEstadoComprobante')) $('billingEstadoComprobante').textContent=res.data.estado||'-';
+    const codigo=$('billingOtId').value.trim()||$('codigoOrden').value;
+    if(codigo && saldo<=0){
+      try{
+        const estadoRes=await api('/api/orders/'+codigo+'/status',{method:'PATCH',body:JSON.stringify({estado:'PROGRAMADA',observaciones:'Orden programada automaticamente tras registrar pago completo de facturacion'})});
+        const nuevoEstado=estadoRes.data.estado||'PROGRAMADA';
+        $('cardEstado').textContent=nuevoEstado;
+        if($('billingOrdenEstado')) $('billingOrdenEstado').textContent=nuevoEstado;
+        if($('billingAccion')) $('billingAccion').textContent='Orden programada y correo de pago enviado';
+        await api('/api/orders/'+codigo+'/payment-notification',{method:'POST',body:JSON.stringify({correo:v('correoContacto'),montoPagado:totalFactura.toFixed(2),comprobante:'Factura '+id})});
+        setBillingStatus('Pago registrado. Se emitio el comprobante, la orden '+codigo+' cambio a PROGRAMADA y se envio el correo al destinatario de la orden.','ok');
+      }catch(e){
+        if($('billingOrdenEstado')) $('billingOrdenEstado').textContent='PAGO REGISTRADO';
+        if($('billingAccion')) $('billingAccion').textContent='No se pudo cambiar estado o enviar correo';
+        setBillingStatus('Pago registrado, pero no se pudo actualizar la orden o enviar correo.','warn');
+      }
+    }else{
+      if($('billingOrdenEstado')) $('billingOrdenEstado').textContent=$('cardEstado').textContent||'PENDIENTE';
+      if($('billingAccion')) $('billingAccion').textContent='Pago parcial';
+      setBillingStatus('Pago parcial registrado. La orden mantiene su estado hasta completar el saldo.','warn');
+    }
+    await cargarFacturas();
+    await cargarListados();
+  }catch(e){setBillingStatus('No se pudo registrar el pago.','bad');}
+}async function cargarFacturas(){
+  try{
+    const res=await api('/api/billing/invoices');
+    const rows=res.data||[];
+    if(!rows.length){$('billingTable').innerHTML='<tr><td colspan="8"><div class="empty">No hay comprobantes emitidos.</div></td></tr>';return;}
+    $('billingTable').innerHTML=rows.map(c=>`<tr><td>${c.id}</td><td>${(c.serie||'')+'-'+(c.correlativo||'')}</td><td>${c.clienteNombre||'-'}</td><td>${c.otId||'-'}</td><td>${money(c.total)}</td><td>${money(c.montoPagado)}</td><td>${money(c.saldoPendiente)}</td><td><span class="badge ok">${c.estado||'-'}</span></td></tr>`).join('');
+  }catch(e){$('billingTable').innerHTML='<tr><td colspan="8"><div class="empty">Billing-service no disponible.</div></td></tr>';}
+}
+
+function setBillingStatus(message,type='info'){
+  const colors={info:'#e8f2ff',ok:'#e8f7ef',warn:'#fff4dd',bad:'#fff0ee'};
+  $('billingStatus').style.background=colors[type]||colors.info;
+  $('billingStatus').textContent=message;
 }
 </script>
 </body>

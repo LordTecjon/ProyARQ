@@ -18,6 +18,7 @@ public class OrdenResponse {
     private String codigoOrden;
     private Long clienteId;
     private String clienteNombre;
+    private String correoContacto;
     private TipoServicio tipoServicio;
     private String origenDireccion;
     private String origenUbigeo;

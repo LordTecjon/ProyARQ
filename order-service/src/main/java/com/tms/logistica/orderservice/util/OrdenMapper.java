@@ -39,6 +39,7 @@ public final class OrdenMapper {
                 .codigoOrden(orden.getCodigoOrden())
                 .clienteId(orden.getClienteId())
                 .clienteNombre(orden.getClienteNombre())
+                .correoContacto(orden.getCorreoContacto())
                 .tipoServicio(orden.getTipoServicio())
                 .origenDireccion(orden.getOrigenDireccion())
                 .origenUbigeo(orden.getOrigenUbigeo())

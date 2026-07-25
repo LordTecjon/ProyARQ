@@ -18,6 +18,9 @@ public class CrearOrdenRequest {
     @NotBlank(message = "El nombre del cliente es obligatorio")
     private String clienteNombre;
 
+    @Email(message = "El correo de contacto no tiene un formato valido")
+    private String correoContacto;
+
     @NotNull(message = "El tipo de servicio es obligatorio")
     private TipoServicio tipoServicio;
 

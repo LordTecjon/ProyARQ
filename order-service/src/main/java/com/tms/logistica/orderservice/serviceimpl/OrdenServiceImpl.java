@@ -10,6 +10,7 @@ import com.tms.logistica.orderservice.repository.OrdenTransporteRepository;
 import com.tms.logistica.orderservice.repository.OrdenTrazabilidadRepository;
 import com.tms.logistica.orderservice.service.OrderStateManager;
 import com.tms.logistica.orderservice.service.OrderTraceabilityService;
+import com.tms.logistica.orderservice.service.OrderNotificationService;
 import com.tms.logistica.orderservice.service.OrdenService;
 import com.tms.logistica.orderservice.service.ResourceAssignmentClient;
 import com.tms.logistica.orderservice.util.CodigoOrdenGenerator;
@@ -30,6 +31,7 @@ public class OrdenServiceImpl implements OrdenService {
     private final OrderStateManager orderStateManager;
     private final OrderTraceabilityService traceabilityService;
     private final ResourceAssignmentClient resourceAssignmentClient;
+    private final OrderNotificationService notificationService;
 
     @Override
     @Transactional
@@ -39,6 +41,7 @@ public class OrdenServiceImpl implements OrdenService {
                 .codigoOrden(generarCodigo())
                 .clienteId(request.getClienteId())
                 .clienteNombre(request.getClienteNombre())
+                .correoContacto(request.getCorreoContacto())
                 .tipoServicio(request.getTipoServicio())
                 .origenDireccion(request.getOrigenDireccion())
                 .origenUbigeo(request.getOrigenUbigeo())
@@ -56,7 +59,9 @@ public class OrdenServiceImpl implements OrdenService {
 
         request.getDetalles().forEach(detalle -> orden.getDetalles().add(OrdenMapper.toDetalle(detalle, orden)));
         traceabilityService.registrar(orden, null, EstadoOrden.PENDIENTE, "REGISTRO", "Orden registrada", usuario);
-        return OrdenMapper.toResponse(ordenRepository.save(orden));
+        OrdenResponse response = OrdenMapper.toResponse(ordenRepository.save(orden));
+        notificationService.notificarOrdenCreada(response, request);
+        return response;
     }
 
     @Override

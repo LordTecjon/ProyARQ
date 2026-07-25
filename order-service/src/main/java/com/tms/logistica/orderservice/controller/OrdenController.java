@@ -6,6 +6,7 @@ import com.tms.logistica.orderservice.model.dto.response.OrdenResponse;
 import com.tms.logistica.orderservice.model.dto.response.TrazabilidadResponse;
 import com.tms.logistica.orderservice.model.enums.EstadoOrden;
 import com.tms.logistica.orderservice.service.OrdenService;
+import com.tms.logistica.orderservice.service.OrderNotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -23,6 +25,7 @@ public class OrdenController {
     private static final String USUARIO_DEFAULT = "sistema";
 
     private final OrdenService ordenService;
+    private final OrderNotificationService notificationService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<OrdenResponse>> crear(
@@ -84,6 +87,20 @@ public class OrdenController {
         return ResponseEntity.ok(ApiResponse.ok("estado actualizado", ordenService.actualizarEstado(codigoOrden, request, usuario)));
     }
 
+
+    @PostMapping("/{id}/payment-notification")
+    public ResponseEntity<ApiResponse<OrdenResponse>> notificarPago(
+            @PathVariable("id") String codigoOrden,
+            @RequestBody Map<String, String> request) {
+        OrdenResponse orden = ordenService.obtenerPorCodigo(codigoOrden);
+        notificationService.notificarPagoRegistrado(
+                orden,
+                request.get("correo"),
+                request.getOrDefault("montoPagado", "0.00"),
+                request.getOrDefault("comprobante", "Comprobante demo")
+        );
+        return ResponseEntity.ok(ApiResponse.ok("notificacion de pago enviada", orden));
+    }
     @GetMapping("/{id}/traceability")
     public ResponseEntity<ApiResponse<List<TrazabilidadResponse>>> trazabilidad(@PathVariable("id") String codigoOrden) {
         return ResponseEntity.ok(ApiResponse.ok("trazabilidad encontrada", ordenService.consultarTrazabilidad(codigoOrden)));

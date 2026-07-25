@@ -1,10 +1,15 @@
 package com.tms.logistica.costservice.serviceimpl;
 
 import com.tms.logistica.costservice.exception.CostoException;
+import com.tms.logistica.costservice.model.dto.request.CalcularCostoRequest;
 import com.tms.logistica.costservice.model.dto.request.GastoRequest;
 import com.tms.logistica.costservice.model.dto.request.IngresoViajeRequest;
 import com.tms.logistica.costservice.model.dto.request.MontoCostoRequest;
-import com.tms.logistica.costservice.model.dto.response.*;
+import com.tms.logistica.costservice.model.dto.response.ComparacionCostoResponse;
+import com.tms.logistica.costservice.model.dto.response.CostoResponse;
+import com.tms.logistica.costservice.model.dto.response.GastoResponse;
+import com.tms.logistica.costservice.model.dto.response.MargenResponse;
+import com.tms.logistica.costservice.model.dto.response.ResumenCostoResponse;
 import com.tms.logistica.costservice.model.entity.CostoTransporte;
 import com.tms.logistica.costservice.model.entity.GastoViaje;
 import com.tms.logistica.costservice.model.enums.EstadoCosto;
@@ -14,12 +19,14 @@ import com.tms.logistica.costservice.service.CostCalculationService;
 import com.tms.logistica.costservice.service.CostIntegrationClient;
 import com.tms.logistica.costservice.service.ExpenseRegistryService;
 import com.tms.logistica.costservice.service.TripCostService;
+import com.tms.logistica.costservice.util.CalculadoraCosto;
 import com.tms.logistica.costservice.util.CostoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +36,21 @@ public class TripCostServiceImpl implements TripCostService {
     private final CostIntegrationClient integrationClient;
     private final CostCalculationService calculationService;
     private final ExpenseRegistryService expenseRegistryService;
+    private final CalculadoraCosto calculadoraCosto;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CostoResponse> listarCostos() {
+        return costoRepository.findAll().stream()
+                .map(CostoMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CostoResponse cotizarCosto(CalcularCostoRequest request, String usuario) {
+        return CostoMapper.toResponse(calculadoraCosto.calcular(request, usuario));
+    }
 
     @Override
     @Transactional

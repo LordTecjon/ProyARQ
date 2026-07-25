@@ -38,6 +38,9 @@ public class OrdenTransporte {
     @Column(name = "cliente_nombre", nullable = false, length = 200)
     private String clienteNombre;
 
+    @Column(name = "correo_contacto", length = 180)
+    private String correoContacto;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_servicio", nullable = false, length = 20)
     private TipoServicio tipoServicio;
